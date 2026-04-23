@@ -1,0 +1,3315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Access Tiers — Design Preview</title>
+
+  <!-- 1. DS tokens + fonts + all .eds-* classes -->
+  <link rel="stylesheet" href="./design-system/ds.css">
+  <!-- 2. Portal shell patterns (sidebar, navbar, tables, badges, etc.) -->
+  <link rel="stylesheet" href="./design-system/shared-components.css">
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+  <style>
+    /*
+     * Preview chrome — outer wrapper for screen navigation + canvas.
+     * NOT the portal shell. The portal shell renders inside #preview-canvas.
+     * No :root {} block — all tokens come from ds.css.
+     */
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: NewTheinhardt, sans-serif;
+      background: var(--neutrals-night-5);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Preview left nav ── */
+    #screen-nav {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--neutrals-night-100);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: var(--spacing-lg) 0;
+    }
+
+    #screen-nav .nav-surface-label {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--neutrals-night-40);
+      padding: var(--spacing-sm) var(--spacing-lg);
+      margin-top: var(--spacing-md);
+    }
+
+    #screen-nav .nav-surface-label:first-child { margin-top: 0; }
+
+    #screen-nav .screen-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-lg);
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-40);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    #screen-nav .screen-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+    }
+
+    #screen-nav .screen-item.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border-left-color: var(--primary-cypress-50);
+    }
+
+    #screen-nav .screen-item .screen-id {
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.12);
+      color: var(--neutrals-night-40);
+      border-radius: var(--radii-1);
+      padding: 1px 5px;
+      flex-shrink: 0;
+    }
+
+    #screen-nav .screen-item.active .screen-id {
+      background: var(--primary-cypress-100);
+      color: #fff;
+    }
+
+    /* ── Preview main area ── */
+    #preview-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Preview top bar ── */
+    #preview-topbar {
+      background: #fff;
+      border-bottom: 1px solid var(--neutrals-night-10);
+      padding: 0 var(--spacing-lg);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-lg);
+      flex-shrink: 0;
+    }
+
+    #preview-topbar .topbar-title {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      flex: 1;
+    }
+
+    #preview-topbar .topbar-title span {
+      font-weight: 400;
+      color: var(--neutrals-night-60);
+      margin-left: var(--spacing-xs);
+    }
+
+    /* State tabs */
+    #state-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--neutrals-night-5);
+      border-radius: var(--radii-2);
+      padding: 3px;
+    }
+
+    #state-tabs .state-tab {
+      padding: 4px 12px;
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      border-radius: var(--radii-1);
+      border: none;
+      background: transparent;
+      color: var(--neutrals-night-60);
+      cursor: pointer;
+    }
+
+    #state-tabs .state-tab.active {
+      background: #fff;
+      color: var(--neutrals-night-100);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    /* Viewport toggle */
+    #viewport-toggle {
+      display: flex;
+      gap: 2px;
+      background: var(--neutrals-night-5);
+      border-radius: var(--radii-2);
+      padding: 3px;
+    }
+
+    #viewport-toggle button {
+      padding: 4px 10px;
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      border-radius: var(--radii-1);
+      border: none;
+      background: transparent;
+      color: var(--neutrals-night-60);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #viewport-toggle button.active {
+      background: #fff;
+      color: var(--neutrals-night-100);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    /* ── Preview canvas ── */
+    #preview-wrapper {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: var(--spacing-2xl);
+      background: var(--neutrals-night-5);
+    }
+
+    /*
+     * #preview-canvas must be display:flex so .sidebar + .portal-page
+     * render side by side (matching body { display:flex } in shared-components.css).
+     * Without this the sidebar stacks above portal-page.
+     */
+    #preview-canvas {
+      position: relative;
+      display: flex;
+      flex-shrink: 0;
+      background: #fff;
+      border-radius: var(--radii-2);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    /* Desktop mode: fills preview window */
+    #preview-canvas.desktop {
+      width: 100%;
+      min-width: 900px;
+      min-height: 800px;
+    }
+
+    /* Mobile mode: phone frame */
+    #preview-canvas.mobile {
+      width: 390px;
+      min-height: 844px;
+    }
+
+    /* Placeholder for unbuilt screens */
+    .screen-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 400px;
+      color: var(--neutrals-night-40);
+      font-size: var(--font-size-sm);
+      font-style: italic;
+    }
+
+    /* ── S1: Restricted Status Banner ──────────────────────────────── */
+
+    /*
+     * NET-NEW: .restricted-banner — warning override on eds-banner
+     * Not in patterns.md because: eds-banner is always cypress (green).
+     * Restricted status requires an amber/warning treatment distinct from
+     * the standard cypress brand banner.
+     */
+    #preview-canvas .restricted-banner {
+      background: #fff8ed;
+      border-bottom: 2px solid var(--utility-warning-royal-orange-100, #f59e0b);
+      border-radius: 0;
+      padding: var(--spacing-md) var(--spacing-3xl);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .restricted-banner .banner-icon {
+      font-size: 20px;
+      color: var(--utility-warning-royal-orange-100, #f59e0b);
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .restricted-banner .banner-body {
+      flex: 1;
+    }
+
+    #preview-canvas .eds-banner-heading {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      line-height: 20px;
+    }
+
+    #preview-canvas .eds-banner-text {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 400;
+      color: var(--neutrals-night-80);
+      line-height: 20px;
+    }
+
+    /*
+     * NET-NEW: .restored-banner — success override on eds-banner
+     * Not in patterns.md because: eds-banner is always cypress (green) and
+     * non-dismissible. Restoration feedback is one-time, dismissible, and
+     * uses a softer success green distinct from the standard cypress banner.
+     */
+    #preview-canvas .restored-banner {
+      background: #f0faf4;
+      border-bottom: 2px solid var(--primary-cypress-50);
+      border-radius: 0;
+      padding: var(--spacing-md) var(--spacing-3xl);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .restored-banner .banner-icon {
+      font-size: 20px;
+      color: var(--primary-cypress-100);
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .restored-banner .banner-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--neutrals-night-60);
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-xs);
+      border-radius: var(--radii-1);
+    }
+
+    #preview-canvas .restored-banner .banner-close:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    /* Home page grid for accessible features */
+    #preview-canvas .home-section-title {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-60);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--spacing-md);
+    }
+
+    #preview-canvas .home-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-3xl);
+    }
+
+    #preview-canvas .home-card {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+      transition: box-shadow 0.1s;
+    }
+
+    #preview-canvas .home-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+
+    #preview-canvas .home-card .card-icon {
+      font-size: 22px;
+      color: var(--primary-cypress-100);
+    }
+
+    #preview-canvas .home-card .card-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+    }
+
+    #preview-canvas .home-card .card-sub {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+    }
+
+    /*
+     * NET-NEW: .restricted-notice — inline notice on home page
+     * Not in patterns.md because: no "blocked action" notice pattern exists
+     * for home page CTAs. This is a specific treatment for hidden/blocked
+     * surface CTAs replacing the standard Quote/Apply home card.
+     */
+    #preview-canvas .restricted-notice {
+      background: var(--neutrals-night-5);
+      border: 1px dashed var(--neutrals-night-20);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    #preview-canvas .restricted-notice .material-icons-outlined {
+      font-size: 18px;
+      color: var(--neutrals-night-40);
+    }
+
+    #preview-canvas .restricted-notice span.notice-text {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+    }
+
+    /* Mobile overrides for S1 */
+    #preview-canvas.mobile .home-cards-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    #preview-canvas.mobile .restricted-banner,
+    #preview-canvas.mobile .restored-banner {
+      padding: var(--spacing-md) var(--spacing-lg);
+    }
+
+    #preview-canvas.mobile .sidebar { display: none; }
+    #preview-canvas.mobile .portal-page { width: 100%; }
+    #preview-canvas.mobile .main-content { padding: var(--spacing-lg); }
+
+    /* ── S2 / S3: Blocked surface redirect ─────────────────────────── */
+
+    /*
+     * NET-NEW: .redirect-explanation — inline alert shown on home after
+     * route guard redirect from /quote or /share.
+     * Not in patterns.md because: no existing "you were redirected" alert
+     * pattern. eds-alert--warning covers the colour but needs layout tweaks
+     * for the inline-within-page-content context.
+     */
+    #preview-canvas .redirect-explanation {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-md);
+      background: #fff8ed;
+      border: 1px solid var(--utility-warning-royal-orange-100, #f59e0b);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    #preview-canvas .redirect-explanation .material-icons-outlined {
+      font-size: 20px;
+      color: var(--utility-warning-royal-orange-100, #f59e0b);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    #preview-canvas .redirect-explanation .redirect-body h3 {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      margin: 0 0 4px 0;
+    }
+
+    #preview-canvas .redirect-explanation .redirect-body p {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-80);
+      margin: 0;
+      line-height: 20px;
+    }
+
+    /* ── S4 / S6: Settings — Delegate Access ────────────────────────── */
+
+    #preview-canvas .settings-content {
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /*
+     * NET-NEW: .settings-section — accordion wrapper for settings sections.
+     * Not in patterns.md because: Settings page accordion layout is not
+     * documented as a shared pattern. Uses eds-accordion internally but
+     * wraps it with a card/border treatment matching the Settings page design.
+     */
+    #preview-canvas .settings-section {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      margin-bottom: var(--spacing-sm);
+      overflow: hidden;
+    }
+
+    #preview-canvas .settings-section-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      cursor: pointer;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    #preview-canvas .settings-section-trigger:hover {
+      background: var(--neutrals-night-5);
+    }
+
+    #preview-canvas .settings-trigger-left {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    #preview-canvas .settings-trigger-icon {
+      font-size: 20px;
+      color: var(--neutrals-night-60);
+    }
+
+    #preview-canvas .settings-trigger-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+    }
+
+    #preview-canvas .settings-trigger-sub {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+      margin-top: 2px;
+    }
+
+    #preview-canvas .settings-section-body {
+      padding: var(--spacing-lg) var(--spacing-2xl) var(--spacing-2xl);
+      border-top: 1px solid var(--neutrals-night-10);
+    }
+
+    #preview-canvas .settings-section-body.collapsed { display: none; }
+
+    /* Delegate section header row (count + invite button) */
+    #preview-canvas .delegate-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    #preview-canvas .delegate-count-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-60);
+    }
+
+    #preview-canvas .delegate-count-label strong {
+      color: var(--neutrals-night-100);
+    }
+
+    /* At-cap: disabled invite button with tooltip */
+    /*
+     * NET-NEW: .invite-btn-wrap — tooltip wrapper for disabled invite button.
+     * Not in patterns.md because: DS Tooltip component doesn't exist as CSS-only.
+     * Rendered as an inline tooltip chip per the DS gap note in README.
+     */
+    #preview-canvas .invite-btn-wrap {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--spacing-xs);
+    }
+
+    #preview-canvas .invite-cap-tooltip {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+      background: var(--neutrals-night-5);
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-1);
+      padding: 4px 8px;
+      max-width: 240px;
+      text-align: right;
+    }
+
+    /* Empty state */
+    /*
+     * NET-NEW: .delegate-empty-state
+     * Not in patterns.md because: no EmptyState component in DS.
+     * Consistent with empty state patterns used across portal tables.
+     */
+    #preview-canvas .delegate-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-4xl) var(--spacing-lg);
+      gap: var(--spacing-md);
+      color: var(--neutrals-night-60);
+      text-align: center;
+    }
+
+    #preview-canvas .delegate-empty-state .material-icons-outlined {
+      font-size: 36px;
+      color: var(--neutrals-night-20);
+    }
+
+    #preview-canvas .delegate-empty-state p {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-60);
+      margin: 0;
+    }
+
+    /* Delegate table columns */
+    #preview-canvas .delegate-table .table-header-row,
+    #preview-canvas .delegate-table .table-row {
+      display: grid;
+      grid-template-columns: 1.5fr 2fr 90px 160px 100px;
+    }
+
+    #preview-canvas .permission-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    #preview-canvas .permission-chip {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      background: var(--primary-cypress-5);
+      color: var(--primary-cypress-150);
+      border-radius: var(--radii-1);
+      padding: 2px 6px;
+      border: 1px solid var(--primary-cypress-25);
+    }
+
+    #preview-canvas .permission-chip.off {
+      background: var(--neutrals-night-5);
+      color: var(--neutrals-night-40);
+      border-color: var(--neutrals-night-10);
+      text-decoration: line-through;
+    }
+
+    #preview-canvas .row-actions {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+
+    /* ── S5: Delegate Invite Form (modal) ───────────────────────────── */
+
+    #preview-canvas .invite-modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+    }
+
+    #preview-canvas .form-row-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+    }
+
+    #preview-canvas .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+
+    #preview-canvas .form-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--neutrals-night-80);
+    }
+
+    #preview-canvas .form-label .required-star {
+      color: var(--utility-error-carmine-red-100);
+      margin-left: 2px;
+    }
+
+    #preview-canvas .form-hint {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+      margin-top: 2px;
+    }
+
+    #preview-canvas .form-field .existing-agent-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-xs);
+      background: #eef6ff;
+      border: 1px solid #93c5fd;
+      border-radius: var(--radii-1);
+      padding: var(--spacing-sm) var(--spacing-md);
+      margin-top: var(--spacing-xs);
+    }
+
+    #preview-canvas .existing-agent-notice .material-icons-outlined {
+      font-size: 16px;
+      color: #3b82f6;
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .existing-agent-notice span {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-80);
+      line-height: 18px;
+    }
+
+    #preview-canvas .legal-note-text {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+      line-height: 18px;
+      padding-top: var(--spacing-sm);
+      border-top: 1px solid var(--neutrals-night-10);
+    }
+
+    /* ── D1: Compliance blocker overlay ──────────────────────────────── */
+    #preview-canvas .compliance-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(4,55,51,0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: var(--spacing-2xl);
+    }
+
+    #preview-canvas .compliance-card {
+      background: #fff;
+      border-radius: var(--radii-3);
+      width: 580px;
+      max-width: 100%;
+      max-height: 82vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+
+    #preview-canvas .compliance-header {
+      padding: var(--spacing-2xl) var(--spacing-2xl) var(--spacing-lg);
+      border-bottom: 1px solid var(--neutrals-night-10);
+    }
+
+    #preview-canvas .compliance-brand {
+      font-family: Cambon, serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-cypress-100);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    #preview-canvas .compliance-heading {
+      font-family: Cambon, serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--neutrals-night-100);
+      margin: 0 0 var(--spacing-xs) 0;
+      line-height: 30px;
+    }
+
+    #preview-canvas .compliance-sub {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-60);
+      margin: 0;
+      line-height: 20px;
+    }
+
+    #preview-canvas .compliance-version-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fff3cd;
+      border: 1px solid #fbbf24;
+      border-radius: var(--radii-1);
+      padding: 3px 8px;
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #92400e;
+      margin-top: var(--spacing-sm);
+    }
+
+    #preview-canvas .compliance-body {
+      padding: var(--spacing-2xl);
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #preview-canvas .compliance-legal-text {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-80);
+      line-height: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    #preview-canvas .compliance-legal-text h4 {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      color: var(--neutrals-night-100);
+      margin: 0 0 4px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    #preview-canvas .compliance-legal-text p { margin: 0; }
+
+    #preview-canvas .compliance-footer {
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      border-top: 1px solid var(--neutrals-night-10);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+      background: var(--neutrals-night-5);
+    }
+
+    #preview-canvas .compliance-agree-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+    }
+
+    #preview-canvas .compliance-agree-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-80);
+      line-height: 18px;
+    }
+
+    /* ── D2–D5: Attribution bar ───────────────────────────────────────── */
+    #preview-canvas .attribution-bar {
+      background: #054742;
+      color: rgba(255,255,255,0.85);
+      padding: 8px var(--spacing-2xl);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      font-weight: 400;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #preview-canvas .attribution-bar .material-icons-outlined {
+      font-size: 16px;
+      color: rgba(255,255,255,0.55);
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .attribution-bar .attr-text { flex: 1; }
+
+    #preview-canvas .attribution-bar .attr-text strong {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── D5: Role switcher button ─────────────────────────────────────── */
+    #preview-canvas .role-switch-btn {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: #fff;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: var(--radii-1);
+      padding: 4px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      text-decoration: none;
+    }
+
+    #preview-canvas .role-switch-btn:hover {
+      background: rgba(255,255,255,0.22);
+    }
+
+    #preview-canvas .role-switch-confirm {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radii-1);
+      padding: var(--spacing-sm) var(--spacing-md);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-xs);
+    }
+
+    #preview-canvas .role-switch-confirm span {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: rgba(255,255,255,0.8);
+      flex: 1;
+    }
+
+    /* ── D2: Permission card grid ─────────────────────────────────────── */
+    #preview-canvas .delegate-perm-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    #preview-canvas .delegate-perm-card {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-xl);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+      transition: box-shadow 0.1s;
+    }
+
+    #preview-canvas .delegate-perm-card:hover { box-shadow: var(--shadow-sm); }
+
+    #preview-canvas .delegate-perm-card.disabled {
+      background: var(--neutrals-night-5);
+      border-style: dashed;
+      cursor: default;
+    }
+
+    #preview-canvas .delegate-perm-card.disabled:hover { box-shadow: none; }
+
+    #preview-canvas .perm-card-icon {
+      font-size: 28px;
+      color: var(--primary-cypress-100);
+    }
+
+    #preview-canvas .delegate-perm-card.disabled .perm-card-icon {
+      color: var(--neutrals-night-20);
+    }
+
+    #preview-canvas .perm-card-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-md);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+    }
+
+    #preview-canvas .delegate-perm-card.disabled .perm-card-label {
+      color: var(--neutrals-night-40);
+    }
+
+    #preview-canvas .perm-card-sub {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+      line-height: 18px;
+    }
+
+    #preview-canvas .perm-card-disabled-note {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-40);
+      font-style: italic;
+      margin-top: var(--spacing-xs);
+    }
+
+    /* ── D3: Absent tab callout ───────────────────────────────────────── */
+    #preview-canvas .nav-absent-note {
+      background: #fff8ed;
+      border: 1px solid #fcd34d;
+      border-radius: var(--radii-1);
+      padding: var(--spacing-sm) var(--spacing-md);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-80);
+      margin-top: var(--spacing-lg);
+      line-height: 18px;
+    }
+
+    /* Mobile overrides for S4/S5/S6 */
+    #preview-canvas.mobile .form-row-2col { grid-template-columns: 1fr; }
+    #preview-canvas.mobile .delegate-table .table-header-row,
+    #preview-canvas.mobile .delegate-table .table-row {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* ── S5: Invite modal overlay ───────────────────────────────────── */
+    #preview-canvas .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    #preview-canvas .modal-card {
+      background: #fff;
+      border-radius: var(--radii-3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      width: 520px;
+      max-width: calc(100% - 48px);
+      overflow: hidden;
+    }
+
+    #preview-canvas .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-xl) var(--spacing-2xl);
+      border-bottom: 1px solid var(--neutrals-night-10);
+    }
+
+    #preview-canvas .modal-title {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-md);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+    }
+
+    #preview-canvas .modal-close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--neutrals-night-60);
+      display: flex;
+      align-items: center;
+      padding: var(--spacing-xs);
+      border-radius: var(--radii-1);
+    }
+
+    #preview-canvas .modal-close-btn:hover { background: var(--neutrals-night-5); }
+
+    #preview-canvas .modal-body {
+      padding: var(--spacing-2xl);
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    #preview-canvas .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--spacing-md);
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      border-top: 1px solid var(--neutrals-night-10);
+    }
+
+    /* Settings page */
+    #preview-canvas .page-header-block {
+      margin-bottom: var(--spacing-xl);
+    }
+
+    #preview-canvas .page-header-block h1 {
+      font-family: Cambon, serif;
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: -0.28px;
+      line-height: 40px;
+      color: var(--neutrals-night-100);
+      margin: 0 0 var(--spacing-xs) 0;
+    }
+
+    #preview-canvas .page-header-block p {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-60);
+      margin: 0;
+    }
+
+    /* Settings horizontal tab nav */
+    #preview-canvas .settings-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--neutrals-night-10);
+      margin-bottom: var(--spacing-2xl);
+      gap: 0;
+      overflow-x: auto;
+    }
+
+    #preview-canvas .settings-tab {
+      padding: var(--spacing-md) var(--spacing-lg);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--neutrals-night-60);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .settings-tab.active {
+      color: var(--neutrals-night-100);
+      border-bottom-color: var(--primary-cypress-100);
+      font-weight: 600;
+    }
+
+    /* Home page: Business Metrics card */
+    #preview-canvas .bm-card {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    #preview-canvas .bm-title {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    #preview-canvas .bm-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: var(--spacing-md);
+    }
+
+    #preview-canvas .bm-metric {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+    }
+
+    #preview-canvas .bm-metric-label {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-60);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #preview-canvas .bm-metric-value {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+    }
+
+    #preview-canvas .bm-metric-sub {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 11px;
+      color: var(--neutrals-night-40);
+    }
+
+    #preview-canvas .bm-bar {
+      height: 6px;
+      background: var(--neutrals-night-10);
+      border-radius: 3px;
+      margin: var(--spacing-xs) 0;
+      overflow: hidden;
+    }
+
+    #preview-canvas .bm-bar-fill {
+      height: 100%;
+      background: var(--primary-cypress-100);
+      border-radius: 3px;
+    }
+
+    /* Start a quote section */
+    #preview-canvas .quote-section-title {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      margin-bottom: var(--spacing-md);
+    }
+
+    #preview-canvas .product-btns {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    #preview-canvas .product-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--spacing-md) var(--spacing-lg);
+      background: #fff;
+      border: 1px solid var(--neutrals-night-20);
+      border-radius: var(--radii-2);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--neutrals-night-100);
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    #preview-canvas .product-btn .material-icons-outlined {
+      font-size: 18px;
+      color: var(--neutrals-night-40);
+    }
+
+    /* Blocked (accessible) product btn for Restricted home */
+    #preview-canvas .product-btn.available {
+      opacity: 1;
+      cursor: pointer;
+    }
+
+    /* Two-col widget row */
+    #preview-canvas .widget-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    #preview-canvas .widget-card {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-lg) var(--spacing-2xl);
+    }
+
+    #preview-canvas .widget-title {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    /* Permission toggle chip in table — active = green, inactive = gray */
+    #preview-canvas .perm-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+
+    #preview-canvas .perm-toggle.on {
+      background: var(--primary-cypress-5);
+      color: var(--primary-cypress-150);
+      border: 1px solid var(--primary-cypress-25);
+    }
+
+    #preview-canvas .perm-toggle.off {
+      background: var(--neutrals-night-5);
+      color: var(--neutrals-night-40);
+      border: 1px solid var(--neutrals-night-10);
+    }
+
+    /* Duplicate-error banner inside modal */
+    #preview-canvas .modal-error-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      background: #fff5f5;
+      border: 1px solid var(--utility-error-carmine-red-100);
+      border-radius: var(--radii-1);
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    #preview-canvas .modal-error-banner .material-icons-outlined {
+      font-size: 18px;
+      color: var(--utility-error-carmine-red-100);
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .modal-error-banner span {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-80);
+      line-height: 18px;
+    }
+
+    /* ── DE: Delegate Invite Email preview ────────────────────────────── */
+    #preview-canvas .email-preview-shell {
+      background: #f3f4f6;
+      width: 100%;
+      min-height: 100%;
+      padding: var(--spacing-2xl) var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+
+    #preview-canvas .email-meta {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      padding: var(--spacing-lg) var(--spacing-xl);
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+
+    #preview-canvas .email-meta-row {
+      display: flex;
+      gap: var(--spacing-md);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+    }
+
+    #preview-canvas .email-meta-label {
+      color: var(--neutrals-night-40);
+      font-weight: 600;
+      width: 52px;
+      flex-shrink: 0;
+    }
+
+    #preview-canvas .email-meta-value {
+      color: var(--neutrals-night-80);
+    }
+
+    #preview-canvas .email-card {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-2);
+      width: 100%;
+      max-width: 600px;
+      overflow: hidden;
+    }
+
+    #preview-canvas .email-brand-header {
+      background: var(--neutrals-night-100);
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      display: flex;
+      align-items: center;
+    }
+
+    #preview-canvas .email-brand-name {
+      font-family: Cambon, serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    #preview-canvas .email-body-inner {
+      padding: var(--spacing-2xl);
+    }
+
+    #preview-canvas .email-body-inner p {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-80);
+      line-height: 22px;
+      margin: 0 0 var(--spacing-md) 0;
+    }
+
+    #preview-canvas .email-body-inner ul {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-80);
+      line-height: 26px;
+      margin: 0 0 var(--spacing-md) 0;
+      padding-left: 20px;
+    }
+
+    #preview-canvas .email-cta-wrap {
+      padding: var(--spacing-lg) 0;
+    }
+
+    #preview-canvas .email-cta-btn {
+      display: inline-block;
+      background: var(--primary-cypress-100);
+      color: #fff;
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: var(--radii-2);
+      text-decoration: none;
+    }
+
+    #preview-canvas .email-expiry-note {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--neutrals-night-40);
+      line-height: 18px;
+      margin: var(--spacing-md) 0 0 0;
+    }
+
+    #preview-canvas .email-footer {
+      background: var(--neutrals-night-5);
+      border-top: 1px solid var(--neutrals-night-10);
+      padding: var(--spacing-lg) var(--spacing-2xl);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 11px;
+      color: var(--neutrals-night-40);
+      line-height: 18px;
+      text-align: center;
+    }
+
+    /* ── DOB: Delegate Onboarding ─────────────────────────────────────── */
+    #preview-canvas .onboarding-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 100%;
+      background: #f9fafb;
+      padding: var(--spacing-3xl) var(--spacing-lg);
+    }
+
+    #preview-canvas .onboarding-card {
+      background: #fff;
+      border: 1px solid var(--neutrals-night-10);
+      border-radius: var(--radii-3);
+      padding: var(--spacing-3xl);
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    #preview-canvas .onboarding-logo {
+      font-family: Cambon, serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      margin-bottom: var(--spacing-2xl);
+      letter-spacing: -0.5px;
+    }
+
+    #preview-canvas .onboarding-heading {
+      font-family: Cambon, serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--neutrals-night-100);
+      margin: 0 0 var(--spacing-xs) 0;
+      line-height: 32px;
+    }
+
+    #preview-canvas .onboarding-sub {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm);
+      color: var(--neutrals-night-60);
+      margin: 0 0 var(--spacing-2xl) 0;
+      line-height: 20px;
+    }
+
+    #preview-canvas .onboarding-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-lg);
+    }
+
+    #preview-canvas .otp-inputs {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    #preview-canvas .otp-input {
+      width: 48px;
+      height: 52px;
+      border: 1.5px solid var(--neutrals-night-20);
+      border-radius: var(--radii-2);
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--neutrals-night-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    #preview-canvas .otp-input.filled {
+      border-color: var(--neutrals-night-60);
+      background: var(--neutrals-night-5);
+    }
+
+    #preview-canvas .onboarding-helper-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+    }
+
+    #preview-canvas .onboarding-helper-link {
+      font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-xs);
+      color: var(--primary-cypress-100);
+      text-decoration: none;
+    }
+
+    #preview-canvas .onboarding-divider {
+      color: var(--neutrals-night-20);
+      font-size: var(--font-size-xs);
+    }
+
+    /* ── Ops Dashboard (Shadcn/Tailwind-inspired) ───────────────────────── */
+    #preview-canvas .ops-shell {
+      display: flex; width: 100%; flex: 1; background: #f8fafc; overflow: hidden;
+    }
+    #preview-canvas .ops-sidebar {
+      width: 220px; flex-shrink: 0; background: #111827; border-right: none;
+      display: flex; flex-direction: column; padding: var(--spacing-lg) 0;
+    }
+    #preview-canvas .ops-sidebar-logo {
+      padding: 0 var(--spacing-lg) var(--spacing-lg);
+      border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: var(--spacing-md);
+    }
+    #preview-canvas .ops-sidebar-logo-text {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm);
+      font-weight: 600; color: #fff; letter-spacing: -0.2px;
+    }
+    #preview-canvas .ops-sidebar-logo-sub {
+      font-family: NewTheinhardt, sans-serif; font-size: 10px; color: #6b7280; margin-top: 2px;
+    }
+    #preview-canvas .ops-nav-section-label {
+      font-family: NewTheinhardt, sans-serif; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; color: #6b7280;
+      padding: var(--spacing-sm) var(--spacing-lg); margin-top: var(--spacing-sm);
+    }
+    #preview-canvas .ops-nav-item {
+      display: flex; align-items: center; gap: var(--spacing-sm);
+      padding: 7px var(--spacing-lg); font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm); color: #9ca3af; cursor: pointer; text-decoration: none;
+    }
+    #preview-canvas .ops-nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    #preview-canvas .ops-nav-item.active {
+      background: rgba(255,255,255,0.1); color: #fff; font-weight: 600;
+    }
+    #preview-canvas .ops-nav-item .material-icons-outlined { font-size: 16px; flex-shrink: 0; }
+    #preview-canvas .ops-sidebar-footer {
+      margin-top: auto; padding: var(--spacing-md) var(--spacing-lg);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    #preview-canvas .ops-role-label {
+      font-family: NewTheinhardt, sans-serif; font-size: 10px; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+    }
+    #preview-canvas .ops-role-toggle {
+      display: flex; background: rgba(255,255,255,0.08); border-radius: 6px; padding: 2px;
+    }
+    #preview-canvas .ops-role-btn {
+      flex: 1; text-align: center; padding: 4px 0; font-family: NewTheinhardt, sans-serif;
+      font-size: 11px; font-weight: 500; color: #9ca3af; cursor: pointer; border-radius: 4px;
+    }
+    #preview-canvas .ops-role-btn.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 600; }
+    #preview-canvas .ops-collapse-btn {
+      display: flex; align-items: center; gap: 4px; margin-top: var(--spacing-sm);
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs);
+      color: #6b7280; cursor: pointer;
+    }
+    #preview-canvas .ops-collapse-btn .material-icons-outlined { font-size: 14px; }
+    #preview-canvas .ops-main {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;
+    }
+    #preview-canvas .ops-topbar {
+      height: 52px; border-bottom: 1px solid #e2e8f0; background: #fff;
+      display: flex; align-items: center; padding: 0 var(--spacing-2xl);
+      gap: var(--spacing-md); flex-shrink: 0;
+    }
+    #preview-canvas .ops-topbar-breadcrumb {
+      display: flex; align-items: center; gap: 4px;
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm); color: #94a3b8;
+    }
+    #preview-canvas .ops-topbar-breadcrumb .crumb-active { color: #0f172a; font-weight: 500; }
+    #preview-canvas .ops-topbar-breadcrumb .material-icons-outlined { font-size: 14px; }
+    #preview-canvas .ops-content { flex: 1; overflow-y: auto; padding: var(--spacing-2xl); }
+    #preview-canvas .ops-page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: var(--spacing-xl);
+    }
+    #preview-canvas .ops-page-title {
+      font-family: NewTheinhardt, sans-serif; font-size: 20px; font-weight: 600;
+      color: #0f172a; margin: 0 0 2px 0;
+    }
+    #preview-canvas .ops-page-sub {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm); color: #64748b; margin: 0;
+    }
+    #preview-canvas .ops-stat-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+    }
+    #preview-canvas .ops-stat-card {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radii-2);
+      padding: var(--spacing-lg);
+    }
+    #preview-canvas .ops-stat-label {
+      font-family: NewTheinhardt, sans-serif; font-size: 10px; font-weight: 600;
+      color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--spacing-xs);
+    }
+    #preview-canvas .ops-stat-value {
+      font-family: NewTheinhardt, sans-serif; font-size: 22px; font-weight: 700; color: #0f172a;
+    }
+    #preview-canvas .ops-stat-note {
+      font-family: NewTheinhardt, sans-serif; font-size: 11px; margin-top: 2px;
+    }
+    #preview-canvas .ops-agent-header {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radii-2);
+      padding: var(--spacing-xl) var(--spacing-2xl); margin-bottom: var(--spacing-xl);
+      display: flex; align-items: center; gap: var(--spacing-xl);
+    }
+    #preview-canvas .ops-agent-avatar {
+      width: 44px; height: 44px; border-radius: 50%; background: #e2e8f0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm);
+      font-weight: 700; color: #64748b; flex-shrink: 0;
+    }
+    #preview-canvas .ops-agent-name {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-md);
+      font-weight: 600; color: #0f172a; margin: 0 0 2px 0;
+    }
+    #preview-canvas .ops-agent-meta {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm); color: #64748b;
+      display: flex; gap: var(--spacing-sm); align-items: center;
+    }
+    #preview-canvas .ops-agent-meta .dot { color: #e2e8f0; }
+    #preview-canvas .ops-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: NewTheinhardt, sans-serif; font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 20px;
+    }
+    #preview-canvas .ops-badge--active   { background: #dcfce7; color: #15803d; }
+    #preview-canvas .ops-badge--restricted { background: #fef3c7; color: #92400e; }
+    #preview-canvas .ops-badge--terminated { background: #fee2e2; color: #b91c1c; }
+    #preview-canvas .ops-badge--pending  { background: #eff6ff; color: #1d4ed8; }
+    #preview-canvas .ops-tabs {
+      display: flex; border-bottom: 1px solid #e2e8f0; margin-bottom: var(--spacing-xl); gap: 0;
+    }
+    #preview-canvas .ops-tab {
+      padding: 10px var(--spacing-lg); font-family: NewTheinhardt, sans-serif;
+      font-size: var(--font-size-sm); font-weight: 500; color: #64748b;
+      cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap;
+    }
+    #preview-canvas .ops-tab.active {
+      color: #0f172a; border-bottom-color: #0f172a; font-weight: 600;
+    }
+    #preview-canvas .ops-tab .ops-tab-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px; border-radius: 9px; background: #e2e8f0;
+      font-size: 10px; font-weight: 700; color: #64748b; margin-left: 6px; padding: 0 4px;
+    }
+    #preview-canvas .ops-tab.active .ops-tab-count { background: #0f172a; color: #fff; }
+    #preview-canvas .ops-table-wrap {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radii-2); overflow: hidden;
+    }
+    #preview-canvas .ops-table { width: 100%; border-collapse: collapse; }
+    #preview-canvas .ops-table th {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs); font-weight: 500;
+      color: #94a3b8; padding: var(--spacing-sm) var(--spacing-lg); background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0; text-align: left;
+    }
+    #preview-canvas .ops-table td {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm);
+      color: #374151; padding: 11px var(--spacing-lg); border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+    }
+    #preview-canvas .ops-table tr:last-child td { border-bottom: none; }
+    #preview-canvas .ops-table tr:hover td { background: #f8fafc; }
+    #preview-canvas .ops-table .cell-primary { font-weight: 600; color: #0f172a; }
+    #preview-canvas .ops-table .cell-mono { font-family: 'Courier New', monospace; font-size: 12px; color: #64748b; }
+    #preview-canvas .ops-row-actions { display: flex; gap: 6px; }
+    #preview-canvas .ops-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs); font-weight: 500;
+      padding: 5px 10px; border-radius: var(--radii-1); border: 1px solid #e2e8f0;
+      background: #fff; color: #374151; cursor: pointer; white-space: nowrap;
+    }
+    #preview-canvas .ops-btn:hover { background: #f8fafc; }
+    #preview-canvas .ops-btn--destructive { border-color: #fecaca; color: #b91c1c; }
+    #preview-canvas .ops-btn--destructive:hover { background: #fef2f2; }
+    #preview-canvas .ops-btn--primary {
+      background: #0f172a; border-color: #0f172a; color: #fff;
+    }
+    #preview-canvas .ops-btn--primary:hover { background: #1e293b; }
+    #preview-canvas .ops-btn--primary:disabled,
+    #preview-canvas .ops-btn--primary[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed; }
+    #preview-canvas .ops-btn .material-icons-outlined { font-size: 14px; }
+    #preview-canvas .ops-drawer-backdrop {
+      position: absolute; inset: 0; background: rgba(15,23,42,0.25); z-index: 50;
+    }
+    #preview-canvas .ops-drawer {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 440px;
+      background: #fff; border-left: 1px solid #e2e8f0;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.1); z-index: 60;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    #preview-canvas .ops-drawer-header {
+      padding: var(--spacing-xl) var(--spacing-2xl); border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    #preview-canvas .ops-drawer-title {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-md);
+      font-weight: 700; color: #0f172a; margin: 0;
+    }
+    #preview-canvas .ops-drawer-sub {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs);
+      color: #64748b; margin: 3px 0 0 0;
+    }
+    #preview-canvas .ops-drawer-body {
+      flex: 1; overflow-y: auto; padding: var(--spacing-xl) var(--spacing-2xl);
+      display: flex; flex-direction: column; gap: var(--spacing-xl);
+    }
+    #preview-canvas .ops-drawer-section { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+    #preview-canvas .ops-drawer-section-title {
+      font-family: NewTheinhardt, sans-serif; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8;
+    }
+    #preview-canvas .ops-drawer-card {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radii-2);
+      padding: var(--spacing-md) var(--spacing-lg);
+    }
+    #preview-canvas .ops-drawer-footer {
+      padding: var(--spacing-lg) var(--spacing-2xl); border-top: 1px solid #e2e8f0;
+      display: flex; flex-direction: column; gap: var(--spacing-sm); flex-shrink: 0;
+    }
+    #preview-canvas .eligibility-row {
+      display: flex; align-items: center; gap: var(--spacing-md);
+      padding: var(--spacing-sm) 0; border-bottom: 1px solid #f1f5f9;
+    }
+    #preview-canvas .eligibility-row:last-child { border-bottom: none; }
+    #preview-canvas .eligibility-label {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs);
+      color: #64748b; flex: 1;
+    }
+    #preview-canvas .eligibility-value {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs);
+      font-weight: 600; color: #0f172a; min-width: 80px; text-align: right;
+    }
+    #preview-canvas .eligibility-icon {
+      font-size: 16px; flex-shrink: 0; width: 20px; text-align: center;
+    }
+    #preview-canvas .eligibility-icon.pass { color: #15803d; }
+    #preview-canvas .eligibility-icon.fail { color: #b91c1c; }
+    #preview-canvas .eligibility-icon.neutral { color: #94a3b8; }
+    #preview-canvas .ops-select-wrap { position: relative; }
+    #preview-canvas .ops-select {
+      width: 100%; padding: 8px 36px 8px var(--spacing-md);
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm); color: #0f172a;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: var(--radii-1); appearance: none; cursor: pointer;
+    }
+    #preview-canvas .ops-select-arrow {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; color: #94a3b8; pointer-events: none;
+    }
+    #preview-canvas .ops-sync-banner {
+      display: flex; align-items: flex-start; gap: var(--spacing-sm);
+      padding: var(--spacing-md) var(--spacing-md); border-radius: var(--radii-1);
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs); line-height: 18px;
+    }
+    #preview-canvas .ops-sync-banner .material-icons-outlined { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    #preview-canvas .ops-sync-banner.is-pending { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+    #preview-canvas .ops-sync-banner.is-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+    #preview-canvas .ops-sync-banner.is-error   { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; }
+    #preview-canvas .ops-debt-block {
+      background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--radii-1);
+      padding: var(--spacing-md) var(--spacing-lg); display: flex; align-items: flex-start; gap: var(--spacing-sm);
+    }
+    #preview-canvas .ops-debt-block .material-icons-outlined { font-size: 16px; color: #ea580c; flex-shrink: 0; margin-top: 2px; }
+    #preview-canvas .ops-debt-text { font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs); color: #374151; line-height: 18px; }
+    #preview-canvas .ops-timeline { display: flex; flex-direction: column; }
+    #preview-canvas .ops-timeline-entry { display: flex; gap: var(--spacing-md); padding-bottom: var(--spacing-lg); }
+    #preview-canvas .ops-timeline-entry:last-child { padding-bottom: 0; }
+    #preview-canvas .ops-timeline-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 18px; }
+    #preview-canvas .ops-timeline-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0;
+      border: 2px solid #fff; box-shadow: 0 0 0 2px #e2e8f0; flex-shrink: 0; margin-top: 3px;
+    }
+    #preview-canvas .ops-timeline-dot.dot-restricted { background: #f59e0b; box-shadow: 0 0 0 2px #fde68a; }
+    #preview-canvas .ops-timeline-dot.dot-active    { background: #22c55e; box-shadow: 0 0 0 2px #bbf7d0; }
+    #preview-canvas .ops-timeline-dot.dot-backfill  { background: #94a3b8; box-shadow: 0 0 0 2px #e2e8f0; }
+    #preview-canvas .ops-timeline-line { flex: 1; width: 1px; background: #e2e8f0; margin: 3px 0 0 0; }
+    #preview-canvas .ops-timeline-event {
+      font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-xs);
+      font-weight: 600; color: #0f172a; margin: 0 0 2px 0; line-height: 16px;
+    }
+    #preview-canvas .ops-timeline-meta {
+      font-family: NewTheinhardt, sans-serif; font-size: 11px; color: #94a3b8; line-height: 17px;
+    }
+    #preview-canvas .ops-timeline-reason {
+      display: inline-block; font-family: NewTheinhardt, sans-serif; font-size: 11px;
+      color: #64748b; background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: var(--radii-1); padding: 1px 7px; margin-top: var(--spacing-xs);
+    }
+    #preview-canvas .ops-timeline-backfill-note {
+      font-family: NewTheinhardt, sans-serif; font-size: 11px; color: #94a3b8; font-style: italic;
+      border-top: 1px dashed #e2e8f0; padding-top: var(--spacing-sm); margin-top: var(--spacing-sm);
+    }
+    #preview-canvas .ops-empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px var(--spacing-lg); gap: var(--spacing-md); text-align: center;
+    }
+    #preview-canvas .ops-empty-state .material-icons-outlined { font-size: 40px; color: #e2e8f0; }
+    #preview-canvas .ops-empty-state p { font-family: NewTheinhardt, sans-serif; font-size: var(--font-size-sm); color: #94a3b8; margin: 0; }
+    #preview-canvas .ops-table tr.row-evaluating td { background: #fefce8; }
+
+    /* ── Delegate portal wrapper (attribution bar + shell) ────────────── */
+    #preview-canvas .delegate-portal-wrap {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #preview-canvas .delegate-portal-inner {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Screen navigation sidebar ── -->
+  <nav id="screen-nav">
+    <div class="nav-surface-label">Surface 1 — Agent Portal</div>
+
+    <div class="screen-item active" data-screen="S1" onclick="navigate('S1')">
+      <span class="screen-id">S1</span>Restricted Status Banner
+    </div>
+    <div class="screen-item" data-screen="S2" onclick="navigate('S2')">
+      <span class="screen-id">S2</span>Blocked Quote &amp; App
+    </div>
+    <div class="screen-item" data-screen="S3" onclick="navigate('S3')">
+      <span class="screen-id">S3</span>Blocked Share Website
+    </div>
+    <div class="screen-item" data-screen="S4" onclick="navigate('S4')">
+      <span class="screen-id">S4</span>Settings — Delegate
+    </div>
+    <div class="screen-item" data-screen="S5" onclick="navigate('S5')">
+      <span class="screen-id">S5</span>Delegate Invite Form
+    </div>
+    <div class="screen-item" data-screen="S6" onclick="navigate('S6')">
+      <span class="screen-id">S6</span>Delegate List Table
+    </div>
+
+    <div class="nav-surface-label">Surface 2 — Delegate Portal</div>
+
+    <div class="screen-item" data-screen="D1" onclick="navigate('D1')">
+      <span class="screen-id">D1</span>Compliance Modal
+    </div>
+    <div class="screen-item" data-screen="D2" onclick="navigate('D2')">
+      <span class="screen-id">D2</span>Delegate Home
+    </div>
+    <div class="screen-item" data-screen="D3" onclick="navigate('D3')">
+      <span class="screen-id">D3</span>Delegate Nav
+    </div>
+    <div class="screen-item" data-screen="D4" onclick="navigate('D4')">
+      <span class="screen-id">D4</span>Attribution Bar
+    </div>
+    <div class="screen-item" data-screen="DE" onclick="navigate('DE')">
+      <span class="screen-id">DE</span>Delegate Invite Email
+    </div>
+    <div class="screen-item" data-screen="DOB" onclick="navigate('DOB')">
+      <span class="screen-id">DOB</span>Delegate Onboarding
+    </div>
+
+    <div class="nav-surface-label">Surface 3 — Ops Dashboard</div>
+
+    <div class="screen-item" data-screen="O1" onclick="navigate('O1')">
+      <span class="screen-id">O1</span>Set Restricted Drawer
+    </div>
+    <div class="screen-item" data-screen="O2" onclick="navigate('O2')">
+      <span class="screen-id">O2</span>Reverse to Active Drawer
+    </div>
+    <div class="screen-item" data-screen="O3" onclick="navigate('O3')">
+      <span class="screen-id">O3</span>Status History Timeline
+    </div>
+    <div class="screen-item" data-screen="O4a" onclick="navigate('O4a')">
+      <span class="screen-id">O4a</span>Currently Restricted Tab
+    </div>
+    <div class="screen-item" data-screen="O4b" onclick="navigate('O4b')">
+      <span class="screen-id">O4b</span>Re-evaluation Queue
+    </div>
+
+    <div class="nav-surface-label">Phase 2 — Downlines</div>
+
+    <div class="screen-item" data-screen="P2" onclick="navigate('P2')">
+      <span class="screen-id">P2</span>Onboarding
+    </div>
+    <div class="screen-item" data-screen="P3" onclick="navigate('P3')">
+      <span class="screen-id">P3</span>Carrier Contracting
+    </div>
+    <div class="screen-item" data-screen="P4" onclick="navigate('P4')">
+      <span class="screen-id">P4</span>Routable Status
+    </div>
+  </nav>
+
+  <!-- ── Preview main area ── -->
+  <div id="preview-main">
+
+    <!-- Top bar -->
+    <div id="preview-topbar">
+      <div class="topbar-title" id="topbar-title">
+        S1 <span>Restricted Status Banner</span>
+      </div>
+
+      <!-- State tabs (populated per screen) -->
+      <div id="state-tabs"></div>
+
+      <!-- Viewport toggle -->
+      <div id="viewport-toggle">
+        <button class="active" onclick="setViewport('desktop')">
+          <span class="material-icons-outlined" style="font-size:14px">desktop_windows</span>
+          Desktop
+        </button>
+        <button onclick="setViewport('mobile')">
+          <span class="material-icons-outlined" style="font-size:14px">phone_iphone</span>
+          Mobile
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas wrapper -->
+    <div id="preview-wrapper">
+      <div id="preview-canvas" class="desktop"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Central state ──────────────────────────────────────────────────
+    const APP_STATE = {
+      currentScreen: 'S1',
+      currentState: 'default',
+      view: 'desktop'
+    };
+
+    // ── Screen metadata (states per screen) ───────────────────────────
+    const SCREEN_META = {
+      S1:  { title: 'Restricted Status Banner',     states: ['default', 'restored'] },
+      S2:  { title: 'Blocked Quote & Application',  states: ['default'] },
+      S3:  { title: 'Blocked Share Website',        states: ['default'] },
+      S4:  { title: 'Settings — Delegate Access',   states: ['empty', 'active', 'at-cap'] },
+      S5:  { title: 'Delegate Invite Form',         states: ['default', 'existing-agent', 'duplicate-error'] },
+      S6:  { title: 'Delegate List Table',          states: ['default', 'pending-row'] },
+      D1:  { title: 'Compliance Blocker Modal',     states: ['first-login', 'version-update'] },
+      D2:  { title: 'Delegate Portal Home',         states: ['all-enabled', 'some-disabled'] },
+      D3:  { title: 'Delegate Nav',                 states: ['all-tabs', 'filtered-tabs'] },
+      D4:  { title: 'Attribution Bar',              states: ['default'] },
+      DE:  { title: 'Delegate Invite Email',        states: ['default'] },
+      DOB: { title: 'Delegate Onboarding',          states: ['email-login', 'two-fa', 'home'] },
+      O1:  { title: 'Set Restricted — Drawer',      states: ['default', 'pending', 'success', 'error'] },
+      O2:  { title: 'Reverse to Active — Drawer',   states: ['default', 'pending', 'success'] },
+      O3:  { title: 'Status History Timeline',      states: ['default', 'backfill'] },
+      O4a: { title: 'Currently Restricted Tab',     states: ['default', 'empty'] },
+      O4b: { title: 'Re-evaluation Queue',          states: ['default', 'row-pending'] },
+      P2:  { title: 'Phase 2 — Onboarding',          states: ['default'] },
+      P3:  { title: 'Phase 2 — Carrier Contracting', states: ['default', 'detail'] },
+      P4:  { title: 'Phase 2 — Routable Status',     states: ['default', 'eligible', 'not-eligible'] },
+    };
+
+    // ── Portal shell helper ───────────────────────────────────────────
+    function _portalShell(activeNav, mainContent, showBanner) {
+      const NAV = [
+        { id:'home',      icon:'home',          label:'Home'                         },
+        { id:'quote',     icon:'request_quote', label:'Quote &amp; Application', nav:'S2', blocked:true },
+        { id:'customers', icon:'group',         label:'Customers'                    },
+        { id:'earnings',  icon:'payments',      label:'Earnings'                     },
+        { id:'perf',      icon:'bar_chart',     label:'Performance'                  },
+        { id:'resources', icon:'menu_book',     label:'Resources'                    },
+        { id:'refer',     icon:'people',        label:'Refer Agents'                 },
+        { id:'share',     icon:'share',         label:'Share Website',          nav:'S3', blocked:true },
+        { id:'contact',   icon:'phone',         label:'Contact Us'                   },
+        { id:'downlines', icon:'account_tree',  label:'Downlines',              nav:'P2', phase2:true },
+      ];
+      const navHTML = NAV.map(function(n) {
+        return '<li class="' + (n.id === activeNav ? 'active' : '') + '">' +
+          '<a href="#"' +
+          (n.nav ? ' data-navigate="' + n.nav + '"' : '') +
+          (n.blocked ? ' style="opacity:0.4;pointer-events:none;cursor:not-allowed"' : '') +
+          '><span class="material-icons-outlined nav-icon">' + n.icon + '</span>' +
+          '<span class="nav-label">' + n.label + '</span></a></li>';
+      }).join('');
+
+      const _amberBanner =
+        '<div class="restricted-banner eds-banner">' +
+        '<span class="material-icons-outlined banner-icon">warning_amber</span>' +
+        '<div class="banner-body">' +
+        '<div class="eds-banner-heading">Your account is in Restricted status</div>' +
+        '<div class="eds-banner-text">You can view earnings and service existing policies, but you cannot write new business.</div>' +
+        '</div>' +
+        '<a href="#" class="eds-btn eds-btn-gray-outline eds-btn--sm" style="flex-shrink:0">Contact Support</a>' +
+        '</div>';
+      const banner = showBanner === false ? '' : (typeof showBanner === 'string' ? showBanner : _amberBanner);
+
+      return '<nav class="sidebar">' +
+        '<div class="sidebar-brand">' +
+        '<div class="agency-name">Century<br>Insurance Co.</div>' +
+        '<div class="powered-by label-reg">Powered by ' +
+        '<span style="font-family:Cambon,serif;font-weight:600;font-size:11px;color:rgba(255,255,255,0.7)">ethos</span>' +
+        '</div></div>' +
+        '<ul class="sidebar-nav">' + navHTML + '</ul>' +
+        '<div class="sidebar-bottom">' +
+        '<a href="#">FAQ</a>' +
+        '<a href="#" data-navigate="S4"' + (activeNav === 'settings' ? ' style="color:#fff;font-weight:600"' : '') + '>Settings</a>' +
+        '<a href="#">Log out</a>' +
+        '</div></nav>' +
+        '<div class="portal-page">' +
+        '<header class="top-nav"><div style="flex:1"></div>' +
+        '<div class="top-nav-actions">' +
+        '<div class="notif-wrap"><span class="material-icons-outlined notif-icon">notifications</span><span class="notif-badge">3</span></div>' +
+        '<div style="width:32px;height:32px;border-radius:50%;background:var(--primary-cypress-100);display:flex;align-items:center;justify-content:center;font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-xs);font-weight:600;color:#fff;margin-left:var(--spacing-sm)">JS</div>' +
+        '</div></header>' +
+        banner +
+        '<main class="main-content">' + mainContent + '</main>' +
+        '</div>';
+    }
+
+    // Shared home cards grid (reused by S1/S2/S3)
+    const _homeContent =
+      '<div style="width:100%">' +
+      // Page header row
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--spacing-2xl)">' +
+      '<h1 style="font-family:Cambon,serif;font-size:32px;font-weight:400;letter-spacing:-0.28px;line-height:44px;color:var(--neutrals-night-100);margin:0">Hello, John Smith</h1>' +
+      '<div style="display:flex;align-items:center;gap:var(--spacing-md);flex-shrink:0">' +
+      '<span style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);color:var(--neutrals-night-80)">My business website</span>' +
+      '<a href="#" data-navigate="S3" style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);font-weight:600;color:var(--primary-cypress-100);text-decoration:none;opacity:0.35;pointer-events:none">Share</a>' +
+      '</div></div>' +
+      // Business Metrics
+      '<div class="bm-card">' +
+      '<div class="bm-title">Business Metrics</div>' +
+      '<div class="bm-grid">' +
+      '<div class="bm-metric"><div class="bm-metric-label">Issued premium <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-metric-value">$0</div><div class="bm-metric-sub" style="color:var(--primary-cypress-100)">↑ 0 vs last 30 days</div></div>' +
+      '<div class="bm-metric"><div class="bm-metric-label">Persistency (4 mo) <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A &nbsp;·&nbsp; Suggested &gt;90%</div></div>' +
+      '<div class="bm-metric"><div class="bm-metric-label">Persistency (7 mo) <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A &nbsp;·&nbsp; Suggested &gt;80%</div></div>' +
+      '<div class="bm-metric"><div class="bm-metric-label">Persistency (13 mo) <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A &nbsp;·&nbsp; Suggested &gt;70%</div></div>' +
+      '<div class="bm-metric"><div class="bm-metric-label">Activation rate <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A &nbsp;·&nbsp; Suggested &gt;65%</div></div>' +
+      '</div></div>' +
+      // Start a quote — blocked in Restricted
+      '<div class="quote-section-title">Start a quote</div>' +
+      '<div class="product-btns">' +
+      '<div class="product-btn">FE Whole Life <span class="material-icons-outlined">chevron_right</span></div>' +
+      '<div class="product-btn">Ethos Protection IUL <span class="material-icons-outlined">chevron_right</span></div>' +
+      '<div class="product-btn">Term Life <span class="material-icons-outlined">chevron_right</span></div>' +
+      '<div class="product-btn" style="opacity:0.45">View All Products <span class="material-icons-outlined">add_circle_outline</span></div>' +
+      '</div>' +
+      // Restricted notices replacing chargebacks/tasks
+      '<div style="display:flex;flex-direction:column;gap:var(--spacing-sm);margin-bottom:var(--spacing-2xl)">' +
+      '<div class="restricted-notice"><span class="material-icons-outlined">block</span><span class="notice-text"><strong>Quote &amp; Application</strong> — writing new policies is disabled while your account is Restricted. <a href="#" data-navigate="S2" style="color:var(--primary-cypress-150)">See details</a></span></div>' +
+      '<div class="restricted-notice"><span class="material-icons-outlined">block</span><span class="notice-text"><strong>Share Website</strong> — your agent microsite is inactive. Clients are redirected to Ethos. <a href="#" data-navigate="S3" style="color:var(--primary-cypress-150)">See details</a></span></div>' +
+      '</div>' +
+      '</div>';
+
+    // Shared delegate table rows
+    function _delegateRows(includeAtCap) {
+      const rows = [
+        { name:'Sarah Chen',    email:'sarah.chen@example.com',  status:'active',  perms:['View Earnings','View Customers'] },
+        { name:'Marcus Webb',   email:'marcus.webb@example.com', status:'active',  perms:['View Earnings'] },
+        { name:'Priya Nair',    email:'priya.nair@example.com',  status:'active',  perms:['View Earnings','View Customers'] },
+      ];
+      if (includeAtCap) {
+        rows.push(
+          { name:'Tom Bradley',  email:'tom.bradley@example.com',  status:'active', perms:['View Earnings'] },
+          { name:'Lisa Park',    email:'lisa.park@example.com',    status:'active', perms:['View Earnings','View Customers'] },
+          { name:'Dev Kapoor',   email:'dev.kapoor@example.com',   status:'active', perms:['View Earnings'] },
+          { name:'Amy Torres',   email:'amy.torres@example.com',   status:'active', perms:['View Earnings','View Customers'] }
+        );
+      }
+      return rows.map(function(r) {
+        const permChips = r.perms.map(function(p) {
+          return '<span class="perm-toggle on">' + p + '</span>';
+        }).join(' ');
+        return '<div class="table-row">' +
+          '<div class="table-cell"><span style="font-weight:500">' + r.name + '</span></div>' +
+          '<div class="table-cell" style="color:var(--neutrals-night-60)">' + r.email + '</div>' +
+          '<div class="table-cell"><span class="badge badge--success">Active</span></div>' +
+          '<div class="table-cell"><div class="permission-chips">' + permChips + '</div></div>' +
+          '<div class="table-cell"><div class="row-actions">' +
+          '<button class="eds-btn eds-btn-gray-outline eds-btn--xs">Remove</button>' +
+          '</div></div>' +
+          '</div>';
+      }).join('');
+    }
+
+    // Shared settings sections (collapsed) for Settings page scaffold
+    function _settingsShell(delegateBody) {
+      const tabs = [
+        'Personal profile',
+        'Delegate Access',
+        'Agency profile',
+        'Appointment scheduler',
+        'Marketing pixels',
+        'Carrier contracting',
+      ];
+
+      const tabNav = '<div class="settings-tabs">' +
+        tabs.map(function(t) {
+          return '<a class="settings-tab' + (t === 'Delegate Access' ? ' active' : '') + '" href="#">' + t + '</a>';
+        }).join('') +
+        '</div>';
+
+      return '<div class="settings-content">' +
+        '<div class="page-header-block">' +
+        '<h1>Settings</h1>' +
+        '<p style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);color:var(--neutrals-night-60);margin:var(--spacing-xs) 0 0 0">Tailor your account by setting up your profile, agency details, appointments, and marketing preferences.</p>' +
+        '</div>' +
+        tabNav +
+        delegateBody +
+        '</div>';
+    }
+
+    // Delegate portal shell — attribution bar + sidebar + portal-page
+    // options.navItems   — array of nav IDs to show (default: home, earnings, customers)
+    // options.showRoleSwitcher — add role-switch button to attribution bar
+    // options.complianceHTML   — if set, rendered as position:absolute overlay inside wrapper
+    function _delegateShell(activeNav, mainContent, options) {
+      options = options || {};
+      const navItems = options.navItems !== undefined ? options.navItems : ['home', 'earnings', 'customers'];
+      const complianceHTML = options.complianceHTML || '';
+
+      const ALL_NAV = [
+        { id:'home',         icon:'home',          label:'Home' },
+        { id:'earnings',     icon:'payments',      label:'Earnings' },
+        { id:'customers',    icon:'group',         label:'Customers' },
+        { id:'new-policies', icon:'request_quote', label:'New Policies' },
+      ];
+
+      const navHTML = ALL_NAV
+        .filter(function(n) { return navItems.indexOf(n.id) !== -1; })
+        .map(function(n) {
+          return '<li class="' + (n.id === activeNav ? 'active' : '') + '">' +
+            '<a href="#"><span class="material-icons-outlined nav-icon">' + n.icon + '</span>' +
+            '<span class="nav-label">' + n.label + '</span></a></li>';
+        }).join('');
+
+      const attribBar =
+        '<div class="attribution-bar">' +
+        '<span class="material-icons-outlined">supervised_user_circle</span>' +
+        '<span class="attr-text">Viewing portal as delegate of <strong>John Smith</strong> &nbsp;·&nbsp; Century Insurance Co.</span>' +
+        '</div>';
+
+      const shell =
+        '<div class="delegate-portal-inner">' +
+        '<nav class="sidebar">' +
+        '<div class="sidebar-brand">' +
+        '<div class="agency-name">Century<br>Insurance Co.</div>' +
+        '<div class="powered-by label-reg">Powered by ' +
+        '<span style="font-family:Cambon,serif;font-weight:600;font-size:11px;color:rgba(255,255,255,0.7)">ethos</span>' +
+        '</div></div>' +
+        '<ul class="sidebar-nav">' + navHTML + '</ul>' +
+        '<div class="sidebar-bottom"><a href="#">Log out</a></div>' +
+        '</nav>' +
+        '<div class="portal-page">' +
+        '<header class="top-nav"><div style="flex:1"></div>' +
+        '<div class="top-nav-actions">' +
+        '<div style="width:32px;height:32px;border-radius:50%;background:var(--primary-cypress-100);display:flex;align-items:center;justify-content:center;font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-xs);font-weight:600;color:#fff">JL</div>' +
+        '</div></header>' +
+        '<main class="main-content">' + mainContent + '</main>' +
+        '</div>' +
+        '</div>';
+
+      return '<div class="delegate-portal-wrap">' +
+        attribBar +
+        shell +
+        (complianceHTML ? complianceHTML : '') +
+        '</div>';
+    }
+
+    // Delegate portal home content (permission cards)
+    function _delegateHomeContent(someDisabled) {
+      const cards = [
+        { icon:'payments',      label:'Earnings',     sub:'View compensation, overrides, and production data',    disabled: false },
+        { icon:'group',         label:'Customers',    sub:'View client list and existing policy details',          disabled: false },
+        { icon:'request_quote', label:'New Policies', sub:'Quote and apply for new life insurance policies',       disabled: !!someDisabled },
+      ];
+      return '<div style="width:100%">' +
+        '<h1 style="font-family:Cambon,serif;font-size:28px;font-weight:400;color:var(--neutrals-night-100);margin:0 0 var(--spacing-xs) 0">Welcome, Jordan Lee</h1>' +
+        '<p style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);color:var(--neutrals-night-60);margin:0 0 var(--spacing-2xl) 0">You\'re viewing John Smith\'s portal.</p>' +
+        '<div class="delegate-perm-grid">' +
+        cards.map(function(c) {
+          return '<div class="delegate-perm-card' + (c.disabled ? ' disabled' : '') + '">' +
+            '<span class="material-icons-outlined perm-card-icon">' + c.icon + '</span>' +
+            '<div class="perm-card-label">' + c.label + '</div>' +
+            '<div class="perm-card-sub">' + c.sub + '</div>' +
+            (c.disabled ? '<div class="perm-card-disabled-note">Not enabled by John Smith</div>' : '') +
+            '</div>';
+        }).join('') +
+        '</div>' +
+        '</div>';
+    }
+
+    // ── Ops Dashboard helpers ─────────────────────────────────────────
+
+    function _opsShell(activePage, mainContent, drawerHTML) {
+      const SECTIONS = [
+        { label: 'Entity Management', items: [
+          { id:'agencies',  label:'Agencies' },
+          { id:'agents',    label:'Agents' },
+        ]},
+        { label: 'Case Management', items: [
+          { id:'agent-status', label:'Agent Status' },
+          { id:'restricted',   label:'Restricted agents' },
+          { id:'debt',         label:'Debt Management' },
+        ]},
+        { label: 'Advance configs', items: [
+          { id:'agency-level',  label:'Agency Level' },
+          { id:'agent-level',   label:'Agent Level' },
+          { id:'global-config', label:'Global Configurations' },
+          { id:'attr-config',   label:'Attribute Configs' },
+        ]},
+        { label: 'System', items: [
+          { id:'config-table', label:'Configuration Table' },
+          { id:'data-table',   label:'Data Table' },
+        ]},
+      ];
+
+      const navHTML = SECTIONS.map(function(s) {
+        return '<div class="ops-nav-section-label">' + s.label + '</div>' +
+          s.items.map(function(n) {
+            return '<a class="ops-nav-item' + (n.id === activePage ? ' active' : '') + '" href="#">' +
+              n.label + '</a>';
+          }).join('');
+      }).join('');
+
+      const breadcrumb = activePage === 'restricted'
+        ? '<span>Case Management</span><span class="material-icons-outlined">chevron_right</span><span class="crumb-active">Restricted agents</span>'
+        : '<span>Agents</span><span class="material-icons-outlined">chevron_right</span><span class="crumb-active">John Smith</span>';
+
+      const logoHTML =
+        '<div class="ops-sidebar-logo">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+        '<div style="width:28px;height:28px;background:#374151;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:NewTheinhardt,sans-serif;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">A</div>' +
+        '<div class="ops-sidebar-logo-text">Admin Portal</div>' +
+        '</div>' +
+        '</div>';
+
+      const footerHTML =
+        '<div class="ops-sidebar-footer">' +
+        '<div class="ops-role-label">Role</div>' +
+        '<div class="ops-role-toggle">' +
+        '<div class="ops-role-btn">Engg</div>' +
+        '<div class="ops-role-btn active">Ops</div>' +
+        '</div>' +
+        '<div class="ops-collapse-btn">' +
+        '<span class="material-icons-outlined">chevron_left</span>Collapse' +
+        '</div>' +
+        '</div>';
+
+      return '<div class="ops-shell">' +
+        '<div class="ops-sidebar">' +
+        logoHTML +
+        navHTML +
+        footerHTML +
+        '</div>' +
+        '<div class="ops-main">' +
+        '<div class="ops-topbar">' +
+        '<div class="ops-topbar-breadcrumb">' + breadcrumb + '</div>' +
+        '<div style="flex:1"></div>' +
+        '<div style="width:28px;height:28px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-family:NewTheinhardt,sans-serif;font-size:11px;font-weight:700;color:#64748b">SK</div>' +
+        '</div>' +
+        '<div class="ops-content">' + mainContent + '</div>' +
+        (drawerHTML || '') +
+        '</div>' +
+        '</div>';
+    }
+
+    function _opsAgentContent(status) {
+      const isRestricted = status === 'restricted';
+      const badgeHTML = isRestricted
+        ? '<span class="ops-badge ops-badge--restricted">Restricted</span>'
+        : '<span class="ops-badge ops-badge--active">Active</span>';
+
+      return '<div class="ops-page-header">' +
+        '<div>' +
+        '<h1 class="ops-page-title">John Smith</h1>' +
+        '<p class="ops-page-sub">pCode: P-2024-004 &nbsp;·&nbsp; Century Insurance Co. &nbsp;·&nbsp; L3 Upline</p>' +
+        '</div>' +
+        '<div style="display:flex;gap:var(--spacing-sm)">' +
+        '<button class="ops-btn"><span class="material-icons-outlined">open_in_new</span>Full profile</button>' +
+        '</div>' +
+        '</div>' +
+        '<div class="ops-agent-header">' +
+        '<div class="ops-agent-avatar">JS</div>' +
+        '<div style="flex:1">' +
+        '<p class="ops-agent-name">John Smith</p>' +
+        '<div class="ops-agent-meta">' +
+        '<span>pCode: P-2024-004</span><span class="dot">·</span>' +
+        '<span>TX license</span><span class="dot">·</span>' +
+        '<span>FFL Capital</span>' +
+        '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+        '<div style="font-family:NewTheinhardt,sans-serif;font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Account status</div>' +
+        badgeHTML +
+        '</div>' +
+        '</div>' +
+        '<div class="ops-stat-grid">' +
+        '<div class="ops-stat-card">' +
+        '<div class="ops-stat-label">Downline AP (last mo.)</div>' +
+        '<div class="ops-stat-value">$67,400</div>' +
+        '<div class="ops-stat-note" style="color:#15803d">↑ Above $50K threshold</div>' +
+        '</div>' +
+        '<div class="ops-stat-card">' +
+        '<div class="ops-stat-label">Org persistency</div>' +
+        '<div class="ops-stat-value">72%</div>' +
+        '<div class="ops-stat-note" style="color:#ef4444">↓ Below qualifying bar</div>' +
+        '</div>' +
+        '<div class="ops-stat-card">' +
+        '<div class="ops-stat-label">Personal AP (last mo.)</div>' +
+        '<div class="ops-stat-value">$2,100</div>' +
+        '<div class="ops-stat-note" style="color:#94a3b8">Personal production only</div>' +
+        '</div>' +
+        '</div>';
+    }
+
+    function _opsTimeline(options) {
+      options = options || {};
+      var entries;
+      if (options.backfill) {
+        entries = [
+          { dot:'dot-restricted', event:'Set to Restricted (backfill)', meta:'April 22, 2026 &nbsp;·&nbsp; Sarah K.', reason:'Retroactive backfill request', backfillNote:'Prior status history unavailable — status set via retroactive backfill.' },
+        ];
+      } else {
+        entries = [
+          { dot:'dot-restricted', event:'Set to Restricted', meta:'April 22, 2026 &nbsp;·&nbsp; Sarah K.', reason:'Low persistency — eligibility confirmed' },
+          { dot:'dot-active',     event:'Restored to Active', meta:'Feb 10, 2026 &nbsp;·&nbsp; James D.', reason:'Re-evaluation — criteria met' },
+          { dot:'dot-restricted', event:'Set to Restricted', meta:'Aug 15, 2025 &nbsp;·&nbsp; Sarah K.', reason:'Low persistency — eligibility confirmed' },
+          { dot:'dot-active',     event:'Account created — Active', meta:'March 12, 2023 &nbsp;·&nbsp; System', reason:null },
+        ];
+      }
+
+      return '<div class="ops-timeline">' +
+        entries.map(function(e, i) {
+          var isLast = i === entries.length - 1;
+          return '<div class="ops-timeline-entry">' +
+            '<div class="ops-timeline-col">' +
+            '<div class="ops-timeline-dot ' + e.dot + '"></div>' +
+            (!isLast ? '<div class="ops-timeline-line"></div>' : '') +
+            '</div>' +
+            '<div style="flex:1;padding-bottom:' + (!isLast ? '0' : '0') + '">' +
+            '<p class="ops-timeline-event">' + e.event + '</p>' +
+            '<div class="ops-timeline-meta">' + e.meta + '</div>' +
+            (e.reason ? '<div class="ops-timeline-reason">' + e.reason + '</div>' : '') +
+            (e.backfillNote ? '<div class="ops-timeline-backfill-note">' + e.backfillNote + '</div>' : '') +
+            '</div>' +
+            '</div>';
+        }).join('') +
+        '</div>';
+    }
+
+    function _opsDrawerScreen(drawerType, state) {
+      const isRestricted = drawerType === 'reverse-active';
+      const isTimeline   = drawerType === 'timeline';
+      const agentContent = _opsAgentContent(isRestricted ? 'restricted' : 'active');
+
+      // ── Eligibility scorecard ──────────────────────────────────────
+      const scorecardHTML =
+        '<div class="ops-drawer-section">' +
+        '<div class="ops-drawer-section-title">Eligibility check</div>' +
+        '<div class="ops-drawer-card">' +
+        '<div class="eligibility-row">' +
+        '<span class="eligibility-label">Downline AP (last mo.)</span>' +
+        '<span class="eligibility-value">$67,400</span>' +
+        '<span class="material-icons-outlined eligibility-icon pass">check_circle</span>' +
+        '</div>' +
+        '<div class="eligibility-row">' +
+        '<span class="eligibility-label">Org-level persistency</span>' +
+        '<span class="eligibility-value">72%</span>' +
+        '<span class="material-icons-outlined eligibility-icon fail">cancel</span>' +
+        '</div>' +
+        '<div class="eligibility-row">' +
+        '<span class="eligibility-label">Termination reason</span>' +
+        '<span class="eligibility-value">Low persistency</span>' +
+        '<span class="material-icons-outlined eligibility-icon pass">check_circle</span>' +
+        '</div>' +
+        '</div>' +
+        '<p style="font-family:NewTheinhardt,sans-serif;font-size:11px;color:#94a3b8;margin:var(--spacing-xs) 0 0 0">Eligibility is informational — ops retains case-by-case discretion.</p>' +
+        '</div>';
+
+      // ── Debt block (O2 only) ───────────────────────────────────────
+      const debtHTML = isRestricted ?
+        '<div class="ops-drawer-section">' +
+        '<div class="ops-drawer-section-title">Outstanding debt</div>' +
+        '<div class="ops-debt-block">' +
+        '<span class="material-icons-outlined">account_balance_wallet</span>' +
+        '<div class="ops-debt-text"><strong>$1,240 outstanding</strong> — debt will continue rolling up normally after status is reversed. Agent will regain full portal access including Quote &amp; Application and Share Website.</div>' +
+        '</div>' +
+        '</div>' : '';
+
+      // ── Reason dropdown ────────────────────────────────────────────
+      const reasons = isRestricted
+        ? ['Reverse — re-evaluation criteria met', 'Reverse — manual ops decision', 'Reverse — agent request approved']
+        : ['Low persistency — eligibility confirmed', 'Retroactive backfill request', 'Manual ops override', 'Low persistency — org threshold exception'];
+
+      const reasonHTML =
+        '<div class="ops-drawer-section">' +
+        '<div class="ops-drawer-section-title">Reason <span style="color:#ef4444">*</span></div>' +
+        '<div class="ops-select-wrap">' +
+        '<select class="ops-select">' +
+        (state === 'default' || state === 'pending' || state === 'success' || state === 'row-pending'
+          ? '<option>' + reasons[0] + '</option>'
+          : '<option value="">Select a reason...</option>') +
+        reasons.slice(1).map(function(r) { return '<option>' + r + '</option>'; }).join('') +
+        '</select>' +
+        '<span class="material-icons-outlined ops-select-arrow">unfold_more</span>' +
+        '</div>' +
+        '</div>';
+
+      // ── Sync state banner ──────────────────────────────────────────
+      const syncHTML = state === 'pending'
+        ? '<div class="ops-sync-banner is-pending"><span class="material-icons-outlined">sync</span><span>Applying status change... syncing with Salesforce.</span></div>'
+        : state === 'success'
+        ? '<div class="ops-sync-banner is-success"><span class="material-icons-outlined">check_circle</span><span><strong>Status updated.</strong> Portal access has been updated. The change is confirmed in Salesforce.</span></div>'
+        : state === 'error'
+        ? '<div class="ops-sync-banner is-error"><span class="material-icons-outlined">error</span><span><strong>Sync failed.</strong> The status change did not propagate to Salesforce. <a href="#" style="color:#b91c1c;font-weight:600">Retry</a> or contact engineering.</span></div>'
+        : '';
+
+      // ── Footer button ──────────────────────────────────────────────
+      const footerBtn = state === 'pending'
+        ? '<button class="ops-btn ops-btn--primary" disabled aria-disabled="true" style="width:100%;justify-content:center;gap:var(--spacing-sm)"><span class="material-icons-outlined" style="font-size:14px;animation:spin 1s linear infinite">sync</span>Applying...</button>'
+        : state === 'success'
+        ? '<button class="ops-btn ops-btn--primary" style="width:100%;justify-content:center">Close drawer</button>'
+        : state === 'error'
+        ? '<button class="ops-btn ops-btn--primary" style="width:100%;justify-content:center">Retry</button>'
+        : isRestricted
+        ? '<button class="ops-btn ops-btn--primary" style="width:100%;justify-content:center">Reverse to Active</button>'
+        : '<button class="ops-btn ops-btn--primary" style="width:100%;justify-content:center">Set Restricted status</button>';
+
+      // ── Timeline section ───────────────────────────────────────────
+      const timelineHTML =
+        '<div class="ops-drawer-section">' +
+        '<div class="ops-drawer-section-title">Status history</div>' +
+        _opsTimeline(isTimeline && state === 'backfill' ? { backfill: true } : {}) +
+        '</div>';
+
+      // ── Assemble drawer ────────────────────────────────────────────
+      const drawerTitleMap = {
+        'set-restricted': 'Set Restricted status',
+        'reverse-active': 'Reverse to Active',
+        'timeline':        'Status history',
+      };
+
+      const drawer =
+        '<div class="ops-drawer-backdrop"></div>' +
+        '<div class="ops-drawer">' +
+        '<div class="ops-drawer-header">' +
+        '<p class="ops-drawer-title">' + drawerTitleMap[drawerType] + '</p>' +
+        '<p class="ops-drawer-sub">John Smith &nbsp;·&nbsp; P-2024-004</p>' +
+        '</div>' +
+        '<div class="ops-drawer-body">' +
+        (isTimeline ? timelineHTML : (
+          scorecardHTML +
+          debtHTML +
+          reasonHTML +
+          (syncHTML ? '<div>' + syncHTML + '</div>' : '') +
+          timelineHTML
+        )) +
+        '</div>' +
+        (isTimeline ? '' :
+          '<div class="ops-drawer-footer">' +
+          (syncHTML ? '' : footerBtn) +
+          (state !== 'pending' && state !== 'success' && state !== 'error' ? '<button class="ops-btn" style="width:100%;justify-content:center">Cancel</button>' : '') +
+          (state === 'success' || state === 'error' ? footerBtn : '') +
+          '</div>'
+        ) +
+        '</div>';
+
+      return _opsShell('agents', agentContent, drawer);
+    }
+
+    function _opsRestrictedPage(tab, state) {
+      const isReeval = tab === 're-evaluation';
+
+      const tabsHTML =
+        '<div class="ops-tabs">' +
+        '<div class="ops-tab' + (!isReeval ? ' active' : '') + '">Currently Restricted <span class="ops-tab-count">4</span></div>' +
+        '<div class="ops-tab' + (isReeval ? ' active' : '') + '">Re-evaluation queue <span class="ops-tab-count">3</span></div>' +
+        '</div>';
+
+      // ── Currently Restricted table ─────────────────────────────────
+      const currentRows = [
+        { name:'John Smith',   pcode:'P-2024-004', ap:'$67,400', pers:'72%', setDate:'Apr 22, 2026', nextEval:'Oct 22, 2026' },
+        { name:'Diana Torres', pcode:'P-2024-011', ap:'$54,200', pers:'68%', setDate:'Mar 1, 2026',  nextEval:'Sep 1, 2026'  },
+        { name:'Karl Jensen',  pcode:'P-2024-017', ap:'$91,100', pers:'74%', setDate:'Feb 14, 2026', nextEval:'Aug 14, 2026' },
+        { name:'Priya Mehta',  pcode:'P-2024-023', ap:'$55,800', pers:'71%', setDate:'Jan 7, 2026',  nextEval:'Jul 7, 2026'  },
+      ];
+
+      const currentTableHTML =
+        '<div class="ops-table-wrap">' +
+        '<table class="ops-table">' +
+        '<thead><tr>' +
+        '<th>Agent</th><th>pCode</th><th>Downline AP</th><th>Org persistency</th><th>Status set</th><th>Next re-eval</th><th></th>' +
+        '</tr></thead>' +
+        '<tbody>' +
+        currentRows.map(function(r) {
+          return '<tr>' +
+            '<td class="cell-primary">' + r.name + '</td>' +
+            '<td class="cell-mono">' + r.pcode + '</td>' +
+            '<td>' + r.ap + '</td>' +
+            '<td>' + r.pers + '</td>' +
+            '<td>' + r.setDate + '</td>' +
+            '<td>' + r.nextEval + '</td>' +
+            '<td><div class="ops-row-actions">' +
+            '<button class="ops-btn">Open drawer</button>' +
+            '</div></td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+
+      const emptyCurrentHTML =
+        '<div class="ops-table-wrap">' +
+        '<div class="ops-empty-state">' +
+        '<span class="material-icons-outlined">check_circle_outline</span>' +
+        '<p>No agents currently in Restricted status.</p>' +
+        '</div>' +
+        '</div>';
+
+      // ── Re-evaluation queue table ──────────────────────────────────
+      const reevalRows = [
+        { name:'John Smith',   pcode:'P-2024-004', ap:'$38,100', pers:'61%', reason:'AP dropped below $50K threshold', pending: false },
+        { name:'Diana Torres', pcode:'P-2024-011', ap:'$42,800', pers:'58%', reason:'Org persistency below qualifying bar', pending: state === 'row-pending' },
+        { name:'Karl Jensen',  pcode:'P-2024-017', ap:'$28,400', pers:'55%', reason:'Both AP and persistency below threshold', pending: false },
+      ];
+
+      const reevalTableHTML =
+        '<div class="ops-table-wrap">' +
+        '<table class="ops-table">' +
+        '<thead><tr>' +
+        '<th>Agent</th><th>pCode</th><th>Downline AP</th><th>Org persistency</th><th>Reason flagged</th><th>Actions</th>' +
+        '</tr></thead>' +
+        '<tbody>' +
+        reevalRows.map(function(r) {
+          const rowActions = r.pending
+            ? '<div class="ops-sync-banner is-pending" style="display:inline-flex;padding:3px 8px"><span class="material-icons-outlined" style="font-size:13px">sync</span><span>Syncing...</span></div>'
+            : '<div class="ops-row-actions">' +
+              '<button class="ops-btn">Keep Restricted</button>' +
+              '<button class="ops-btn">Reverse to Active</button>' +
+              '<button class="ops-btn ops-btn--destructive">Terminate</button>' +
+              '</div>';
+          return '<tr' + (r.pending ? ' class="row-evaluating"' : '') + '>' +
+            '<td class="cell-primary">' + r.name + '</td>' +
+            '<td class="cell-mono">' + r.pcode + '</td>' +
+            '<td><span style="color:#ef4444">' + r.ap + '</span></td>' +
+            '<td><span style="color:#ef4444">' + r.pers + '</span></td>' +
+            '<td style="color:#64748b;font-size:var(--font-size-xs)">' + r.reason + '</td>' +
+            '<td>' + rowActions + '</td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+
+      const searchBarHTML =
+        '<div style="display:flex;align-items:center;gap:var(--spacing-sm);margin-bottom:var(--spacing-lg)">' +
+        '<div style="display:flex;align-items:center;gap:var(--spacing-sm);background:#fff;border:1px solid #e2e8f0;border-radius:20px;padding:6px var(--spacing-md);flex:1;max-width:360px">' +
+        '<span class="material-icons-outlined" style="font-size:16px;color:#94a3b8">search</span>' +
+        '<input style="border:none;outline:none;font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);color:#374151;background:transparent;width:100%" placeholder="Search by name, pCode, or agency...">' +
+        '</div>' +
+        '</div>';
+
+      const mainContent =
+        '<div class="ops-page-header">' +
+        '<div>' +
+        '<h1 class="ops-page-title">Restricted agents</h1>' +
+        '<p class="ops-page-sub">Monitor agents in Restricted status and manage the 6-month re-evaluation queue.</p>' +
+        '</div>' +
+        '</div>' +
+        searchBarHTML +
+        tabsHTML +
+        (isReeval ? reevalTableHTML : (state === 'empty' ? emptyCurrentHTML : currentTableHTML));
+
+      return _opsShell('restricted', mainContent);
+    }
+
+    // ── Screen render functions ────────────────────────────────────────
+    const SCREENS = {
+      S1: function(state) {
+        const isRestored = state === 'restored';
+        const bannerHTML = isRestored ?
+          '<div class="restored-banner eds-banner">' +
+          '<span class="material-icons-outlined banner-icon">check_circle</span>' +
+          '<div class="banner-body">' +
+          '<div class="eds-banner-heading">Your account has been restored to Active status</div>' +
+          '<div class="eds-banner-text">All features are available. Welcome back.</div>' +
+          '</div>' +
+          '<button class="banner-close" title="Dismiss"><span class="material-icons-outlined" style="font-size:18px">close</span></button>' +
+          '</div>' : undefined;
+
+        // Restored state: all features unlocked — full home with active product buttons
+        const activeHomeContent = isRestored ?
+          '<div style="width:100%">' +
+          '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--spacing-2xl)">' +
+          '<h1 style="font-family:Cambon,serif;font-size:32px;font-weight:400;letter-spacing:-0.28px;line-height:44px;color:var(--neutrals-night-100);margin:0">Hello, John Smith</h1>' +
+          '<div style="display:flex;align-items:center;gap:var(--spacing-md);flex-shrink:0">' +
+          '<span style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);color:var(--neutrals-night-80)">My business website</span>' +
+          '<a href="#" data-navigate="S3" style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);font-weight:600;color:var(--primary-cypress-100);text-decoration:none">Share</a>' +
+          '</div></div>' +
+          '<div class="bm-card">' +
+          '<div class="bm-title">Business Metrics</div>' +
+          '<div class="bm-grid">' +
+          '<div class="bm-metric"><div class="bm-metric-label">Issued premium <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-metric-value">$0</div><div class="bm-metric-sub" style="color:var(--primary-cypress-100)">↑ 0 vs last 30 days</div></div>' +
+          '<div class="bm-metric"><div class="bm-metric-label">Persistency (4 mo)</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;90%</div></div>' +
+          '<div class="bm-metric"><div class="bm-metric-label">Persistency (7 mo)</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;80%</div></div>' +
+          '<div class="bm-metric"><div class="bm-metric-label">Persistency (13 mo)</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;70%</div></div>' +
+          '<div class="bm-metric"><div class="bm-metric-label">Activation rate</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;65%</div></div>' +
+          '</div></div>' +
+          '<div class="quote-section-title">Start a quote</div>' +
+          '<div class="product-btns">' +
+          '<div class="product-btn available">FE Whole Life <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn available">Ethos Protection IUL <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn available">Term Life <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn available">View All Products <span class="material-icons-outlined">add_circle_outline</span></div>' +
+          '</div></div>' : null;
+
+        return _portalShell('home', activeHomeContent || _homeContent, bannerHTML);
+      },
+      S2: function(state) {
+        const alert =
+          '<div class="redirect-explanation">' +
+          '<span class="material-icons-outlined">block</span>' +
+          '<div class="redirect-body">' +
+          '<h3>Quote &amp; Application is not available</h3>' +
+          '<p>Your account is in Restricted status. You cannot write new policies or submit applications until your account is restored to Active. Contact support if you believe this is in error.</p>' +
+          '</div></div>';
+        return _portalShell('home', alert + _homeContent);
+      },
+
+      S3: function(state) {
+        const alert =
+          '<div class="redirect-explanation">' +
+          '<span class="material-icons-outlined">block</span>' +
+          '<div class="redirect-body">' +
+          '<h3>Share Website is currently inactive</h3>' +
+          '<p>Your agent microsite has been deactivated while your account is in Restricted status. Clients visiting your share link are automatically redirected to an Ethos quote flow. Your link will be restored when your account returns to Active.</p>' +
+          '</div></div>';
+        return _portalShell('home', alert + _homeContent);
+      },
+
+      S4: function(state) {
+        let delegateBody;
+        if (state === 'empty') {
+          delegateBody =
+            '<div class="delegate-section-header">' +
+            '<span class="delegate-count-label"><strong>0</strong> of 7 delegates</span>' +
+            '<button class="eds-btn eds-btn-primary eds-btn--sm">+ Invite delegate</button>' +
+            '</div>' +
+            '<div class="delegate-empty-state">' +
+            '<span class="material-icons-outlined">supervised_user_circle</span>' +
+            '<p>No delegates yet</p>' +
+            '<p style="font-size:var(--font-size-xs)">Delegates can view your portal with limited access. You can invite up to 7.</p>' +
+            '</div>';
+        } else if (state === 'at-cap') {
+          delegateBody =
+            '<div class="delegate-section-header">' +
+            '<span class="delegate-count-label"><strong>7</strong> of 7 delegates</span>' +
+            '<div class="invite-btn-wrap">' +
+            '<button class="eds-btn eds-btn-primary eds-btn--sm" disabled aria-disabled="true">+ Invite delegate</button>' +
+            '<span class="invite-cap-tooltip">Delegate cap reached (7/7). Remove a delegate to invite a new one.</span>' +
+            '</div>' +
+            '</div>' +
+            '<div class="data-table-card delegate-table">' +
+            '<div class="table-header-row">' +
+            '<div class="table-cell">Name</div><div class="table-cell">Email</div>' +
+            '<div class="table-cell">Status</div><div class="table-cell">Permissions</div><div class="table-cell">Actions</div>' +
+            '</div>' +
+            '<div class="table-body">' + _delegateRows(true) + '</div>' +
+            '</div>';
+        } else {
+          // active (default)
+          delegateBody =
+            '<div class="delegate-section-header">' +
+            '<span class="delegate-count-label"><strong>3</strong> of 7 delegates</span>' +
+            '<button class="eds-btn eds-btn-primary eds-btn--sm">+ Invite delegate</button>' +
+            '</div>' +
+            '<div class="data-table-card delegate-table">' +
+            '<div class="table-header-row">' +
+            '<div class="table-cell">Name</div><div class="table-cell">Email</div>' +
+            '<div class="table-cell">Status</div><div class="table-cell">Permissions</div><div class="table-cell">Actions</div>' +
+            '</div>' +
+            '<div class="table-body">' + _delegateRows(false) + '</div>' +
+            '</div>';
+        }
+        return _portalShell('settings', _settingsShell(delegateBody));
+      },
+
+      S5: function(state) {
+        const isDuplicate = state === 'duplicate-error';
+        const isExisting  = state === 'existing-agent';
+
+        const errorBanner = isDuplicate ?
+          '<div class="modal-error-banner">' +
+          '<span class="material-icons-outlined">error</span>' +
+          '<span><strong>This person is already a delegate.</strong> Sarah Chen (sarah.chen@example.com) already has delegate access to your portal. You can manage their permissions in the delegate list.</span>' +
+          '</div>' : '';
+
+        const existingNotice = isExisting ?
+          '<div class="existing-agent-notice">' +
+          '<span class="material-icons-outlined">info</span>' +
+          '<span>This email belongs to an existing Ethos agent. We\'ll link their account — no new account will be created. They\'ll receive an invite email to accept delegate access.</span>' +
+          '</div>' : '';
+
+        const emailValue = (isExisting || isDuplicate) ? 'sarah.chen@example.com' : '';
+        const firstValue = (isExisting || isDuplicate) ? 'Sarah' : '';
+        const lastValue  = (isExisting || isDuplicate) ? 'Chen' : '';
+
+        const modal =
+          '<div class="modal-backdrop">' +
+          '<div class="modal-card">' +
+          '<div class="modal-header">' +
+          '<span class="modal-title">Invite a delegate</span>' +
+          '<button class="modal-close-btn"><span class="material-icons-outlined" style="font-size:20px">close</span></button>' +
+          '</div>' +
+          '<div class="modal-body">' +
+          '<div class="invite-modal-body">' +
+          errorBanner +
+          '<div class="form-row-2col">' +
+          '<div class="form-field">' +
+          '<label class="form-label">First name <span class="required-star">*</span></label>' +
+          '<div class="eds-input-wrap"><input class="eds-input eds-input--sm" value="' + firstValue + '" placeholder="First name"></div>' +
+          '</div>' +
+          '<div class="form-field">' +
+          '<label class="form-label">Last name <span class="required-star">*</span></label>' +
+          '<div class="eds-input-wrap"><input class="eds-input eds-input--sm" value="' + lastValue + '" placeholder="Last name"></div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="form-field">' +
+          '<label class="form-label">Email address <span class="required-star">*</span></label>' +
+          '<div class="eds-input-wrap"><input class="eds-input eds-input--sm" value="' + emailValue + '" placeholder="name@example.com"></div>' +
+          existingNotice +
+          '</div>' +
+          '<div class="form-field">' +
+          '<label class="form-label">Permissions</label>' +
+          '<div class="form-hint">Select which parts of your portal this delegate can access.</div>' +
+          '<div style="display:flex;flex-direction:column;gap:var(--spacing-md);margin-top:var(--spacing-md)">' +
+          '<label class="eds-checkbox-wrap">' +
+          '<span class="eds-checkbox"></span>' +
+          '<div><div class="eds-checkbox-label">View Earnings</div>' +
+          '<div style="font-size:var(--font-size-xs);color:var(--neutrals-night-60);margin-top:2px">Override compensation, debt balance, and production data</div></div>' +
+          '</label>' +
+          '<label class="eds-checkbox-wrap">' +
+          '<span class="eds-checkbox"></span>' +
+          '<div><div class="eds-checkbox-label">View Customers</div>' +
+          '<div style="font-size:var(--font-size-xs);color:var(--neutrals-night-60);margin-top:2px">Customer list and existing policy details</div></div>' +
+          '</label>' +
+          '</div>' +
+          '</div>' +
+          '<p class="legal-note-text">By inviting a delegate, you confirm you have authority to grant this person access to your portal. Ethos may audit delegate activity for compliance purposes.</p>' +
+          '</div>' +
+          '</div>' +
+          '<div class="modal-footer">' +
+          '<button class="eds-btn eds-btn-gray-outline eds-btn--sm">Cancel</button>' +
+          '<button class="eds-btn eds-btn-primary eds-btn--sm"' + (isDuplicate ? ' disabled aria-disabled="true"' : '') + '>Send invite</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>';
+
+        const activeBody =
+          '<div class="delegate-section-header">' +
+          '<span class="delegate-count-label"><strong>3</strong> of 7 delegates</span>' +
+          '<button class="eds-btn eds-btn-primary eds-btn--sm">+ Invite delegate</button>' +
+          '</div>' +
+          '<div class="data-table-card delegate-table">' +
+          '<div class="table-header-row">' +
+          '<div class="table-cell">Name</div><div class="table-cell">Email</div>' +
+          '<div class="table-cell">Status</div><div class="table-cell">Permissions</div><div class="table-cell">Actions</div>' +
+          '</div>' +
+          '<div class="table-body">' + _delegateRows(false) + '</div>' +
+          '</div>';
+
+        return _portalShell('settings', _settingsShell(activeBody)) + modal;
+      },
+
+      S6: function(state) {
+        const hasPending = state === 'pending-row';
+        const pendingRow = hasPending ?
+          '<div class="table-row" style="background:var(--neutrals-night-5)">' +
+          '<div class="table-cell"><span style="font-weight:500;color:var(--neutrals-night-60)">Jordan Lee</span></div>' +
+          '<div class="table-cell" style="color:var(--neutrals-night-60)">jordan.lee@example.com</div>' +
+          '<div class="table-cell"><span class="status-badge status-badge--pending">Pending</span></div>' +
+          '<div class="table-cell"><span style="font-size:var(--font-size-xs);color:var(--neutrals-night-40)">Awaiting acceptance</span></div>' +
+          '<div class="table-cell"><div class="row-actions">' +
+          '<button class="eds-btn eds-btn-gray-outline eds-btn--xs">Resend</button>' +
+          '<button class="eds-btn eds-btn-gray-outline eds-btn--xs">Revoke</button>' +
+          '</div></div>' +
+          '</div>' : '';
+
+        const count = hasPending ? '4' : '3';
+        const delegateBody =
+          '<div class="delegate-section-header">' +
+          '<span class="delegate-count-label"><strong>' + count + '</strong> of 7 delegates</span>' +
+          '<button class="eds-btn eds-btn-primary eds-btn--sm">+ Invite delegate</button>' +
+          '</div>' +
+          '<div class="data-table-card delegate-table">' +
+          '<div class="table-header-row">' +
+          '<div class="table-cell">Name</div><div class="table-cell">Email</div>' +
+          '<div class="table-cell">Status</div><div class="table-cell">Permissions</div><div class="table-cell">Actions</div>' +
+          '</div>' +
+          '<div class="table-body">' + _delegateRows(false) + pendingRow + '</div>' +
+          '</div>';
+
+        return _portalShell('settings', _settingsShell(delegateBody));
+      },
+      D1: function(state) {
+        const isVersionUpdate = state === 'version-update';
+        const complianceHTML =
+          '<div class="compliance-overlay">' +
+          '<div class="compliance-card">' +
+          '<div class="compliance-header">' +
+          '<div class="compliance-brand">ethos</div>' +
+          '<h2 class="compliance-heading">' + (isVersionUpdate ? 'Our terms have been updated' : 'Before you get started') + '</h2>' +
+          '<p class="compliance-sub">' + (isVersionUpdate ?
+            'We\'ve updated our Delegate Access Terms. Please review and accept the new version to continue.' :
+            'Please review and accept the Delegate Access Terms to access the portal.') + '</p>' +
+          (isVersionUpdate ? '<div class="compliance-version-chip"><span class="material-icons-outlined" style="font-size:14px">new_releases</span>Updated April 22, 2026 &nbsp;·&nbsp; Version 2.1</div>' : '') +
+          '</div>' +
+          '<div class="compliance-body">' +
+          '<div class="compliance-legal-text">' +
+          '<div><h4>1. Delegate Access</h4><p>You are accessing this portal as a delegate on behalf of a licensed Ethos insurance agent ("Principal"). Your access is granted at the Principal\'s discretion and may be revoked at any time.</p></div>' +
+          '<div><h4>2. Permitted Use</h4><p>You may only access features and data that the Principal has explicitly enabled for your account. Unauthorized access to restricted features is prohibited and may result in immediate termination of access.</p></div>' +
+          '<div><h4>3. Confidentiality</h4><p>All client information, policy data, earnings, and business information accessed through this portal is confidential. You may not disclose or use this information outside of supporting the Principal\'s business activities.</p></div>' +
+          '<div><h4>4. Compliance</h4><p>Your activity in this portal is subject to audit by Ethos for compliance purposes. You must comply with all applicable insurance regulations and Ethos policies while acting as a delegate.</p></div>' +
+          '<div><h4>5. Termination</h4><p>Ethos or the Principal may terminate your delegate access at any time. Upon termination, you must immediately cease all use of the portal and confidential information obtained through it.</p></div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="compliance-footer">' +
+          '<div class="compliance-agree-wrap">' +
+          '<span class="eds-checkbox"></span>' +
+          '<label class="compliance-agree-label">I have read and agree to the Delegate Access Terms and understand my obligations as a delegate user.</label>' +
+          '</div>' +
+          '<button class="eds-btn eds-btn-primary" disabled aria-disabled="true">Accept &amp; Continue</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>';
+        return _delegateShell('home', _delegateHomeContent(false), { complianceHTML: complianceHTML });
+      },
+
+      D2: function(state) {
+        const someDisabled = state === 'some-disabled';
+        return _delegateShell('home', _delegateHomeContent(someDisabled));
+      },
+
+      D3: function(state) {
+        const allTabs = state === 'all-tabs';
+        const navItems = allTabs
+          ? ['home', 'earnings', 'customers', 'new-policies']
+          : ['home', 'earnings', 'customers'];
+        const note = allTabs ? '' :
+          '<div class="nav-absent-note"><strong>Design note:</strong> "New Policies" tab is absent (not dimmed) because the Principal has not enabled this permission for this delegate. The tab does not appear at all — it is not grayed out.</div>';
+        return _delegateShell('home', note + _delegateHomeContent(!allTabs), { navItems: navItems });
+      },
+
+      D4: function(state) {
+        return _delegateShell('home', _delegateHomeContent(false));
+      },
+
+
+      DE: function(state) {
+        return '<div class="email-preview-shell">' +
+          '<div class="email-meta">' +
+          '<div class="email-meta-row"><span class="email-meta-label">From</span><span class="email-meta-value">Ethos &lt;no-reply@getethos.com&gt;</span></div>' +
+          '<div class="email-meta-row"><span class="email-meta-label">To</span><span class="email-meta-value">jordan.lee@example.com</span></div>' +
+          '<div class="email-meta-row"><span class="email-meta-label">Subject</span><span class="email-meta-value" style="font-weight:600;color:var(--neutrals-night-100)">John Smith has invited you to access their Ethos portal</span></div>' +
+          '</div>' +
+          '<div class="email-card">' +
+          '<div class="email-brand-header">' +
+          '<div class="email-brand-name">ethos</div>' +
+          '</div>' +
+          '<div class="email-body-inner">' +
+          '<p>Hi Jordan,</p>' +
+          '<p><strong style="color:var(--neutrals-night-100)">John Smith</strong> (Century Insurance Co.) has invited you to access their Ethos Partnerships portal as a delegate.</p>' +
+          '<p>As a delegate, you\'ll be able to view the following:</p>' +
+          '<ul>' +
+          '<li><strong>Earnings</strong> — compensation, overrides, and production data</li>' +
+          '<li><strong>Customers</strong> — client list and existing policy details</li>' +
+          '</ul>' +
+          '<p>To get started, accept the invite below. You\'ll be asked to agree to the Delegate Access Terms the first time you log in.</p>' +
+          '<div class="email-cta-wrap"><a href="#" class="email-cta-btn">Accept invite</a></div>' +
+          '<p class="email-expiry-note">This invite link expires in 7 days. If you didn\'t expect this email, you can safely ignore it — your information will not be shared.</p>' +
+          '</div>' +
+          '<div class="email-footer">' +
+          'Ethos Life Insurance Services, Inc. &nbsp;·&nbsp; 400 S El Camino Real, Suite 400, San Mateo, CA 94402<br>' +
+          'You received this email because you were invited as a delegate by an Ethos partner agent.' +
+          '</div>' +
+          '</div>' +
+          '</div>';
+      },
+
+      DOB: function(state) {
+        if (state === 'email-login') {
+          return '<div class="onboarding-page">' +
+            '<div class="onboarding-card">' +
+            '<div class="onboarding-logo">ethos</div>' +
+            '<h1 class="onboarding-heading">Welcome to Ethos Partnerships</h1>' +
+            '<p class="onboarding-sub">Enter your email address to sign in or create your delegate account.</p>' +
+            '<div class="onboarding-form">' +
+            '<div class="form-field">' +
+            '<label class="form-label">Email address</label>' +
+            '<div class="eds-input-wrap"><input class="eds-input" value="jordan.lee@example.com" placeholder="name@example.com"></div>' +
+            '</div>' +
+            '<button class="eds-btn eds-btn-primary" style="width:100%">Continue</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        }
+
+        if (state === 'two-fa') {
+          return '<div class="onboarding-page">' +
+            '<div class="onboarding-card">' +
+            '<div class="onboarding-logo">ethos</div>' +
+            '<h1 class="onboarding-heading">Check your email</h1>' +
+            '<p class="onboarding-sub">We sent a 6-digit code to <strong>jordan.lee@example.com</strong>. Enter it below to verify your identity.</p>' +
+            '<div class="onboarding-form">' +
+            '<div class="form-field">' +
+            '<label class="form-label">Verification code</label>' +
+            '<div class="otp-inputs">' +
+            '<div class="otp-input filled">3</div>' +
+            '<div class="otp-input filled">7</div>' +
+            '<div class="otp-input filled">2</div>' +
+            '<div class="otp-input" style="border-color:var(--primary-cypress-100);box-shadow:0 0 0 3px rgba(4,119,91,0.12)"></div>' +
+            '<div class="otp-input"></div>' +
+            '<div class="otp-input"></div>' +
+            '</div>' +
+            '</div>' +
+            '<button class="eds-btn eds-btn-primary" style="width:100%">Verify</button>' +
+            '<div class="onboarding-helper-row">' +
+            '<a href="#" class="onboarding-helper-link">Resend code</a>' +
+            '<span class="onboarding-divider">&nbsp;·&nbsp;</span>' +
+            '<a href="#" class="onboarding-helper-link">Use a different email</a>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        }
+
+        // home state — delegate portal home post-login
+        return _delegateShell('home', _delegateHomeContent(false));
+      },
+
+      O1:  function(state) { return _opsDrawerScreen('set-restricted', state); },
+      O2:  function(state) { return _opsDrawerScreen('reverse-active', state); },
+      O3:  function(state) { return _opsDrawerScreen('timeline', state); },
+      O4a: function(state) { return _opsRestrictedPage('currently-restricted', state); },
+      O4b: function(state) { return _opsRestrictedPage('re-evaluation', state); },
+
+      P2: function(state) {
+        const _c = function(label, color) {
+          const dot = { ok:'#16a34a', warn:'#d97706', error:'#dc2626', neutral:'#64748b', na:'#94a3b8' };
+          const bg  = { ok:'#f0fdf4', warn:'#fffbeb', error:'#fef2f2', neutral:'#f8fafc', na:'#f8fafc' };
+          const c   = dot[color] || dot.neutral;
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;background:' + (bg[color]||bg.neutral) + ';color:' + c + '">' +
+            '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';flex-shrink:0"></span>' + label + '</span>';
+        };
+        const TH = 'style="padding:10px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;background:#fff;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap"';
+        const TD = 'style="padding:12px 16px;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;vertical-align:middle"';
+
+        const sel = function(opts, placeholder) {
+          return '<select style="padding:8px 28px 8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#374151;background:#fff;appearance:none;background-image:url(\'data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 20 20\\" fill=\\"%236b7280\\"><path fill-rule=\\"evenodd\\" d=\\"M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z\\" clip-rule=\\"evenodd\\"/></svg>\');background-repeat:no-repeat;background-position:right 8px center;background-size:16px">' +
+            ['<option>' + placeholder + '</option>'].concat(opts.map(function(o) { return '<option>' + o + '</option>'; })).join('') +
+            '</select>';
+        };
+
+        const filterBar =
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+          '<div style="position:relative;flex:1;min-width:200px;max-width:280px">' +
+          '<span class="material-icons-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:#9ca3af">search</span>' +
+          '<input placeholder="Search by name or pCode..." style="width:100%;padding:8px 12px 8px 34px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#111827;outline:none;background:#fff">' +
+          '</div>' +
+          sel(['Complete','Action needed','Incomplete'], 'All statuses') +
+          sel(['Writing','Referral'], 'All tiers') +
+          '<span style="font-size:12px;color:#6b7280;white-space:nowrap">4 agents</span>' +
+          '</div>';
+
+        const head =
+          '<th ' + TH + '>Agent</th>' +
+          '<th ' + TH + '>pCode</th>' +
+          '<th ' + TH + '>First Login</th>' +
+          '<th ' + TH + '>NPN Verified</th>' +
+          '<th ' + TH + '>Tier</th>' +
+          '<th ' + TH + '>AML Training</th>' +
+          '<th ' + TH + '>CA/IA IUL</th>';
+
+        const rows =
+          '<tr><td ' + TD + '><strong>Emma Rodriguez</strong></td><td ' + TD + '>P-2024-031</td><td ' + TD + '>' + _c('Complete','ok') + '</td><td ' + TD + '>' + _c('Verified','ok') + '</td><td ' + TD + '>' + _c('Writing','ok') + '</td><td ' + TD + '>' + _c('Valid · exp Dec 2026','ok') + '</td><td ' + TD + '>' + _c('N/A','na') + '</td></tr>' +
+          '<tr><td ' + TD + '><strong>Marcus Chen</strong></td><td ' + TD + '>P-2024-038</td><td ' + TD + '>' + _c('Complete','ok') + '</td><td ' + TD + '>' + _c('Pending','warn') + '</td><td ' + TD + '>' + _c('Referral','neutral') + '</td><td ' + TD + '>' + _c('In progress','warn') + '</td><td ' + TD + '>' + _c('N/A','na') + '</td></tr>' +
+          '<tr><td ' + TD + '><strong>Sofia Kim</strong></td><td ' + TD + '>P-2024-044</td><td ' + TD + '>' + _c('Incomplete','warn') + '</td><td ' + TD + '>' + _c('Not started','error') + '</td><td ' + TD + '>—</td><td ' + TD + '>' + _c('Not started','error') + '</td><td ' + TD + '>' + _c('Required','warn') + '</td></tr>' +
+          '<tr><td ' + TD + '><strong>Jake Turner</strong></td><td ' + TD + '>P-2024-051</td><td ' + TD + '>' + _c('Complete','ok') + '</td><td ' + TD + '>' + _c('Verified','ok') + '</td><td ' + TD + '>' + _c('Writing','ok') + '</td><td ' + TD + '>' + _c('Expired','error') + '</td><td ' + TD + '>' + _c('N/A','na') + '</td></tr>';
+
+        const table = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">' +
+          '<table style="width:100%;border-collapse:collapse"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+        const mainContent = '<div style="padding:32px">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+          '<h1 style="font-size:28px;font-weight:700;color:#111827;margin:0">Onboarding</h1>' +
+          '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e">Phase 2</span>' +
+          '</div>' +
+          filterBar + table + '</div>';
+
+        return _portalShell('downlines', mainContent, false);
+      },
+
+      P3: function(state) {
+        const _c = function(label, color) {
+          const dot = { ok:'#16a34a', warn:'#d97706', error:'#dc2626', neutral:'#64748b', na:'#94a3b8' };
+          const bg  = { ok:'#f0fdf4', warn:'#fffbeb', error:'#fef2f2', neutral:'#f8fafc', na:'#f8fafc' };
+          const c   = dot[color] || dot.neutral;
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;background:' + (bg[color]||bg.neutral) + ';color:' + c + '">' +
+            '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';flex-shrink:0"></span>' + label + '</span>';
+        };
+        const TH = 'style="padding:10px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;background:#fff;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap"';
+        const TD = 'style="padding:12px 16px;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;vertical-align:middle"';
+
+        const sel = function(opts, placeholder) {
+          return '<select style="padding:8px 28px 8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#374151;background:#fff;appearance:none;background-image:url(\'data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 20 20\\" fill=\\"%236b7280\\"><path fill-rule=\\"evenodd\\" d=\\"M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z\\" clip-rule=\\"evenodd\\"/></svg>\');background-repeat:no-repeat;background-position:right 8px center;background-size:16px">' +
+            ['<option>' + placeholder + '</option>'].concat(opts.map(function(o) { return '<option>' + o + '</option>'; })).join('') +
+            '</select>';
+        };
+
+        if (state === 'detail') {
+          const backBtn = '<button onclick="navigate(\'P3\',\'default\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;font-size:13px;color:#374151;cursor:pointer;margin-bottom:20px">' +
+            '<span class="material-icons-outlined" style="font-size:16px">arrow_back</span>Back to all agents</button>';
+
+          const carriers = [
+            { name:'Pacific Life',    status:'Active',      appt:'Appointed',     submitted:'Jan 12, 2026' },
+            { name:'North American',  status:'Active',      appt:'Appointed',     submitted:'Jan 12, 2026' },
+            { name:'Protective',      status:'Submitted',   appt:'Pending',       submitted:'Mar 3, 2026' },
+            { name:'Legal & General', status:'Not initiated', appt:'—',           submitted:'—' },
+            { name:'Corebridge',      status:'Submitted',   appt:'Pending',       submitted:'Feb 28, 2026' },
+          ];
+
+          const statusColor = { 'Active':'ok', 'Submitted':'warn', 'Not initiated':'neutral' };
+          const apptColor   = { 'Appointed':'ok', 'Pending':'warn', '—':'na' };
+
+          const head = '<th ' + TH + '>Carrier</th><th ' + TH + '>Contract Status</th><th ' + TH + '>Appointment</th><th ' + TH + '>Date Submitted</th>';
+          const rows = carriers.map(function(r) {
+            return '<tr><td ' + TD + '><strong>' + r.name + '</strong></td><td ' + TD + '>' + _c(r.status, statusColor[r.status]||'neutral') + '</td><td ' + TD + '>' + (r.appt === '—' ? '<span style="color:#9ca3af">—</span>' : _c(r.appt, apptColor[r.appt]||'neutral')) + '</td><td ' + TD + '>' + r.submitted + '</td></tr>';
+          }).join('');
+
+          const table = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">' +
+            '<table style="width:100%;border-collapse:collapse"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+          const agentBadge = '<div style="display:flex;align-items:center;gap:10px;padding:16px 20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:20px">' +
+            '<div style="width:36px;height:36px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">ER</div>' +
+            '<div><div style="font-size:14px;font-weight:600;color:#111827">Emma Rodriguez</div>' +
+            '<div style="font-size:12px;color:#6b7280">pCode: P-2024-031 · Writing tier</div></div></div>';
+
+          const mainContent = '<div style="padding:32px">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+            '<h1 style="font-size:28px;font-weight:700;color:#111827;margin:0">Carrier Contracting</h1>' +
+            '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e">Phase 2</span>' +
+            '</div>' +
+            backBtn + agentBadge + table + '</div>';
+
+          return _portalShell('downlines', mainContent, false);
+        }
+
+        // default — all agents
+        const filterBar =
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+          '<div style="position:relative;flex:1;min-width:200px;max-width:280px">' +
+          '<span class="material-icons-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:#9ca3af">search</span>' +
+          '<input placeholder="Search by name or pCode..." style="width:100%;padding:8px 12px 8px 34px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#111827;outline:none;background:#fff">' +
+          '</div>' +
+          sel(['Pacific Life','North American','Protective','Legal & General','Corebridge'], 'All carriers') +
+          sel(['Active','Submitted','Not initiated'], 'All statuses') +
+          '<span style="font-size:12px;color:#6b7280;white-space:nowrap">4 agents</span>' +
+          '</div>';
+
+        const agents = [
+          { name:'Emma Rodriguez',  pcode:'P-2024-031', pacific:'Active',        north:'Active',        protective:'Active',       lg:'Active',           core:'Active' },
+          { name:'Marcus Chen',     pcode:'P-2024-038', pacific:'Active',        north:'Submitted',     protective:'Not initiated', lg:'Not initiated',    core:'Submitted' },
+          { name:'Sofia Kim',       pcode:'P-2024-044', pacific:'Not initiated', north:'Not initiated', protective:'Not initiated', lg:'Not initiated',    core:'Not initiated' },
+          { name:'Jake Turner',     pcode:'P-2024-051', pacific:'Active',        north:'Active',        protective:'Submitted',    lg:'Not initiated',    core:'Submitted' },
+        ];
+        const sColor = { 'Active':'ok', 'Submitted':'warn', 'Not initiated':'neutral' };
+
+        const head =
+          '<th ' + TH + '>Agent</th>' +
+          '<th ' + TH + '>Pacific Life</th>' +
+          '<th ' + TH + '>North American</th>' +
+          '<th ' + TH + '>Protective</th>' +
+          '<th ' + TH + '>L&G</th>' +
+          '<th ' + TH + '>Corebridge</th>' +
+          '<th ' + TH + '></th>';
+
+        const rows = agents.map(function(a) {
+          const detailNav = a.name === 'Emma Rodriguez' ? 'navigate(\'P3\',\'detail\')' : 'void 0';
+          return '<tr>' +
+            '<td ' + TD + '><strong>' + a.name + '</strong><br><span style="font-size:11px;color:#6b7280">' + a.pcode + '</span></td>' +
+            '<td ' + TD + '>' + _c(a.pacific, sColor[a.pacific]) + '</td>' +
+            '<td ' + TD + '>' + _c(a.north, sColor[a.north]) + '</td>' +
+            '<td ' + TD + '>' + _c(a.protective, sColor[a.protective]) + '</td>' +
+            '<td ' + TD + '>' + _c(a.lg, sColor[a.lg]) + '</td>' +
+            '<td ' + TD + '>' + _c(a.core, sColor[a.core]) + '</td>' +
+            '<td ' + TD + '><a href="#" onclick="event.preventDefault();' + detailNav + '" style="font-size:12px;color:#1d4ed8;text-decoration:none;font-weight:500">View details →</a></td>' +
+            '</tr>';
+        }).join('');
+
+        const table = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">' +
+          '<table style="width:100%;border-collapse:collapse"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+        const mainContent = '<div style="padding:32px">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+          '<h1 style="font-size:28px;font-weight:700;color:#111827;margin:0">Carrier Contracting</h1>' +
+          '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e">Phase 2</span>' +
+          '</div>' +
+          filterBar + table + '</div>';
+
+        return _portalShell('downlines', mainContent, false);
+      },
+
+      P4: function(state) {
+        const _c = function(label, color) {
+          const dot = { ok:'#16a34a', warn:'#d97706', error:'#dc2626', neutral:'#64748b', na:'#94a3b8' };
+          const bg  = { ok:'#f0fdf4', warn:'#fffbeb', error:'#fef2f2', neutral:'#f8fafc', na:'#f8fafc' };
+          const c   = dot[color] || dot.neutral;
+          return '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;background:' + (bg[color]||bg.neutral) + ';color:' + c + '">' +
+            '<span style="width:6px;height:6px;border-radius:50%;background:' + c + ';flex-shrink:0"></span>' + label + '</span>';
+        };
+        const TH = 'style="padding:10px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;background:#fff;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap"';
+        const TD = 'style="padding:12px 16px;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;vertical-align:middle"';
+
+        const sel = function(opts, placeholder) {
+          return '<select style="padding:8px 28px 8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#374151;background:#fff;appearance:none;background-image:url(\'data:image/svg+xml,<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 20 20\\" fill=\\"%236b7280\\"><path fill-rule=\\"evenodd\\" d=\\"M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z\\" clip-rule=\\"evenodd\\"/></svg>\');background-repeat:no-repeat;background-position:right 8px center;background-size:16px">' +
+            ['<option>' + placeholder + '</option>'].concat(opts.map(function(o) { return '<option>' + o + '</option>'; })).join('') +
+            '</select>';
+        };
+
+        const backBtn = '<button onclick="navigate(\'P4\',\'default\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;font-size:13px;color:#374151;cursor:pointer;margin-bottom:20px">' +
+          '<span class="material-icons-outlined" style="font-size:16px">arrow_back</span>Back to all agents</button>';
+
+        if (state === 'eligible') {
+          const agentBadge = '<div style="display:flex;align-items:center;gap:10px;padding:16px 20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:20px">' +
+            '<div style="width:36px;height:36px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">ER</div>' +
+            '<div><div style="font-size:14px;font-weight:600;color:#111827">Emma Rodriguez</div>' +
+            '<div style="font-size:12px;color:#6b7280">pCode: P-2024-031</div></div>' +
+            '<div style="margin-left:auto">' + _c('Payment eligible','ok') + '</div></div>';
+
+          const gates = '<div style="display:flex;flex-direction:column;gap:10px">' + [
+            { label:'Valid License (AgentSync/NIPR)', status:'Verified', color:'ok', note:'State: CA · Exp: Dec 2027' },
+            { label:'Signed Carrier DocuSign',        status:'Signed',   color:'ok', note:'Pacific Life — signed Jan 12, 2026' },
+            { label:'Agent Status',                   status:'Active',   color:'ok', note:'No restrictions or flags' },
+          ].map(function(g) {
+            return '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">' +
+              '<span class="material-icons-outlined" style="font-size:20px;color:#16a34a">check_circle</span>' +
+              '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#111827">' + g.label + '</div>' +
+              '<div style="font-size:12px;color:#6b7280;margin-top:2px">' + g.note + '</div></div>' +
+              _c(g.status, g.color) + '</div>';
+          }).join('') + '</div>';
+
+          const mainContent = '<div style="padding:32px">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+            '<h1 style="font-size:28px;font-weight:700;color:#111827;margin:0">Routable Status</h1>' +
+            '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e">Phase 2</span>' +
+            '</div>' + backBtn + agentBadge + gates + '</div>';
+
+          return _portalShell('downlines', mainContent, false);
+        }
+
+        if (state === 'not-eligible') {
+          const agentBadge = '<div style="display:flex;align-items:center;gap:10px;padding:16px 20px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:20px">' +
+            '<div style="width:36px;height:36px;border-radius:50%;background:#6b7280;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">MC</div>' +
+            '<div><div style="font-size:14px;font-weight:600;color:#111827">Marcus Chen</div>' +
+            '<div style="font-size:12px;color:#6b7280">pCode: P-2024-038</div></div>' +
+            '<div style="margin-left:auto">' + _c('Not eligible','error') + '</div></div>';
+
+          const blocker = '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-bottom:20px">' +
+            '<span class="material-icons-outlined" style="font-size:20px;color:#dc2626">warning</span>' +
+            '<div><div style="font-size:13px;font-weight:600;color:#dc2626">Payment blocked</div>' +
+            '<div style="font-size:12px;color:#6b7280;margin-top:2px">DocuSign not completed — Routable cannot process payment until carrier agreement is signed.</div></div></div>';
+
+          const gates = '<div style="display:flex;flex-direction:column;gap:10px">' + [
+            { label:'Valid License (AgentSync/NIPR)', status:'Verified', color:'ok',    note:'State: CA · Exp: Nov 2027', icon:'check_circle' },
+            { label:'Signed Carrier DocuSign',        status:'Pending',  color:'warn',  note:'Pacific Life — sent Feb 10, 2026 · not yet signed', icon:'schedule' },
+            { label:'Agent Status',                   status:'Active',   color:'ok',    note:'No restrictions or flags', icon:'check_circle' },
+          ].map(function(g) {
+            const iconColor = g.color === 'ok' ? '#16a34a' : '#d97706';
+            return '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">' +
+              '<span class="material-icons-outlined" style="font-size:20px;color:' + iconColor + '">' + g.icon + '</span>' +
+              '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#111827">' + g.label + '</div>' +
+              '<div style="font-size:12px;color:#6b7280;margin-top:2px">' + g.note + '</div></div>' +
+              _c(g.status, g.color) + '</div>';
+          }).join('') + '</div>';
+
+          const mainContent = '<div style="padding:32px">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+            '<h1 style="font-size:28px;font-weight:700;color:#111827;margin:0">Routable Status</h1>' +
+            '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e">Phase 2</span>' +
+            '</div>' + backBtn + agentBadge + blocker + gates + '</div>';
+
+          return _portalShell('downlines', mainContent, false);
+        }
+
+        // default — all agents
+        const filterBar =
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+          '<div style="position:relative;flex:1;min-width:200px;max-width:280px">' +
+          '<span class="material-icons-outlined" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;color:#9ca3af">search</span>' +
+          '<input placeholder="Search by name or pCode..." style="width:100%;padding:8px 12px 8px 34px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;color:#111827;outline:none;background:#fff">' +
+          '</div>' +
+          sel(['Eligible','Not eligible'], 'All eligibility') +
+          sel(['DocuSign pending','License expired','Agent inactive'], 'All blockers') +
+          '<span style="font-size:12px;color:#dc2626;font-weight:500;white-space:nowrap">4 agents · 2 not eligible</span>' +
+          '</div>';
+
+        const agents = [
+          { name:'Emma Rodriguez',  pcode:'P-2024-031', lic:'ok', ds:'ok', status:'ok', eligible:true },
+          { name:'Marcus Chen',     pcode:'P-2024-038', lic:'ok', ds:'warn', status:'ok', eligible:false, blocker:'DocuSign pending' },
+          { name:'Sofia Kim',       pcode:'P-2024-044', lic:'error', ds:'warn', status:'ok', eligible:false, blocker:'License expired' },
+          { name:'Jake Turner',     pcode:'P-2024-051', lic:'ok', ds:'ok', status:'ok', eligible:true },
+        ];
+
+        const licLabel  = { ok:'Valid',  warn:'Expiring', error:'Expired' };
+        const dsLabel   = { ok:'Signed', warn:'Pending',  error:'Missing' };
+        const statLabel = { ok:'Active', warn:'Restricted', error:'Inactive' };
+        const eligLabel = { true: _c('Eligible','ok'), false: _c('Not eligible','error') };
+
+        const head =
+          '<th ' + TH + '>Agent</th>' +
+          '<th ' + TH + '>License</th>' +
+          '<th ' + TH + '>DocuSign</th>' +
+          '<th ' + TH + '>Agent Status</th>' +
+          '<th ' + TH + '>Payment Eligible</th>' +
+          '<th ' + TH + '>Blocker</th>' +
+          '<th ' + TH + '></th>';
+
+        const rows = agents.map(function(a) {
+          const detailState = a.eligible ? 'eligible' : 'not-eligible';
+          const detailAgent = (a.name === 'Emma Rodriguez' || a.name === 'Marcus Chen');
+          const detailNav = detailAgent ? 'navigate(\'P4\',\'' + detailState + '\')' : 'void 0';
+          return '<tr>' +
+            '<td ' + TD + '><strong>' + a.name + '</strong><br><span style="font-size:11px;color:#6b7280">' + a.pcode + '</span></td>' +
+            '<td ' + TD + '>' + _c(licLabel[a.lic], a.lic) + '</td>' +
+            '<td ' + TD + '>' + _c(dsLabel[a.ds], a.ds) + '</td>' +
+            '<td ' + TD + '>' + _c(statLabel[a.status], a.status) + '</td>' +
+            '<td ' + TD + '>' + eligLabel[a.eligible] + '</td>' +
+            '<td ' + TD + '>' + (a.blocker ? '<span style="font-size:12px;color:#dc2626">' + a.blocker + '</span>' : '<span style="color:#9ca3af">—</span>') + '</td>' +
+            '<td ' + TD + '><a href="#" onclick="event.preventDefault();' + detailNav + '" style="font-size:12px;color:#1d4ed8;text-decoration:none;font-weight:500">View details →</a></td>' +
+            '</tr>';
+        }).join('');
+
+        const table = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">' +
+          '<table style="width:100%;border-collapse:collapse"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+
+        const mainContent = '<div style="padding:32px">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">' +
+          '<h1 style="font-size:28px;font-weight:700;color:#111827;margin:0">Routable Status</h1>' +
+          '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fef3c7;color:#92400e">Phase 2</span>' +
+          '</div>' +
+          filterBar + table + '</div>';
+
+        return _portalShell('downlines', mainContent, false);
+      },
+    };
+
+    // ── Navigation ────────────────────────────────────────────────────
+    function navigate(screenId, state) {
+      APP_STATE.currentScreen = screenId;
+      APP_STATE.currentState = state || SCREEN_META[screenId].states[0];
+
+      // Update sidebar active state
+      document.querySelectorAll('.screen-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.screen === screenId);
+      });
+
+      // Update topbar title
+      const meta = SCREEN_META[screenId];
+      document.getElementById('topbar-title').innerHTML =
+        `${screenId} <span>${meta.title}</span>`;
+
+      // Rebuild state tabs
+      renderStateTabs(screenId);
+
+      // Render canvas
+      renderCanvas();
+    }
+
+    function renderStateTabs(screenId) {
+      const states = SCREEN_META[screenId].states;
+      const container = document.getElementById('state-tabs');
+      container.innerHTML = states.map(s =>
+        `<button class="state-tab ${s === APP_STATE.currentState ? 'active' : ''}"
+          onclick="switchState('${s}')">${s}</button>`
+      ).join('');
+    }
+
+    function switchState(state) {
+      APP_STATE.currentState = state;
+      document.querySelectorAll('.state-tab').forEach(el => {
+        el.classList.toggle('active', el.textContent === state);
+      });
+      renderCanvas();
+    }
+
+    function setViewport(view) {
+      APP_STATE.view = view;
+      const canvas = document.getElementById('preview-canvas');
+      canvas.className = view;
+
+      document.querySelectorAll('#viewport-toggle button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.trim().toLowerCase().startsWith(view));
+      });
+
+      renderCanvas();
+    }
+
+    function renderCanvas() {
+      const canvas = document.getElementById('preview-canvas');
+      const html = SCREENS[APP_STATE.currentScreen](APP_STATE.currentState);
+      canvas.innerHTML = html || `<div class="screen-placeholder">Screen ${APP_STATE.currentScreen} — pending build</div>`;
+    }
+
+    // ── data-navigate wiring (delegated click handler) ────────────────
+    document.getElementById('preview-canvas').addEventListener('click', (e) => {
+      const target = e.target.closest('[data-navigate]');
+      if (target) {
+        e.preventDefault();
+        navigate(target.dataset.navigate);
+      }
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────
+    navigate('S1');
+  </script>
+
+</body>
+</html>

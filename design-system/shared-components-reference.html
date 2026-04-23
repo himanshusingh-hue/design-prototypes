@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Outstanding Debt — Agent Portal (Component Reference)</title>
+
+  <!-- DS first — loads all tokens, fonts, Material Icons -->
+  <link rel="stylesheet" href="ds.css">
+  <!-- Shared portal components — net-new patterns not yet in DS -->
+  <link rel="stylesheet" href="shared-components.css">
+  <!-- Material Icons fallback -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+  <style>
+    /*
+     * Page-specific overrides only.
+     * All component styles live in shared-components.css.
+     * No :root {} block — all tokens come from ds.css.
+     */
+
+    /* Demo banner — fixed at top, pushes layout via body padding-top */
+    .demo-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: var(--primary-cypress-15);
+      border-bottom: 1px solid var(--primary-cypress-50);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: NewTheinhardt, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--primary-cypress-100);
+      height: 37px;
+    }
+    .demo-banner .demo-icon { font-size: 16px; }
+    .demo-banner a { color: var(--primary-cypress-150); }
+
+    /* Push entire flex layout below the fixed banner — no spacer div needed */
+    body { padding-top: 37px; }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Component reference banner ───────────────────────────────── -->
+  <div class="demo-banner">
+    <span class="material-icons-outlined demo-icon">info</span>
+    <strong>Component Reference</strong> — Outstanding Debt · Agent view ·
+    Figma node 1097:92119 ·
+    Components: PageHeader, SummaryCardStrip, DataTableCard (ViewSwitcher, TableMeta, ColumnHeaders, Badge, Pagination)
+  </div>
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="agency-name">Century<br>Insurance Co.</div>
+      <div class="powered-by label-reg">
+        Powered by
+        <span style="font-family:Cambon,serif;font-weight:600;font-size:11px;color:rgba(255,255,255,0.7)">ethos</span>
+      </div>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">home</span>
+          <span class="nav-label">Home</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">request_quote</span>
+          <span class="nav-label">Quote &amp; Application</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">group</span>
+          <span class="nav-label">Customers</span>
+        </a>
+      </li>
+      <li class="active">
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">payments</span>
+          <span class="nav-label">Earnings</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">bar_chart</span>
+          <span class="nav-label">Performance</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">menu_book</span>
+          <span class="nav-label">Resources</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">people</span>
+          <span class="nav-label">Refer Agents</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">share</span>
+          <span class="nav-label">Share Website</span>
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="material-icons-outlined nav-icon">phone</span>
+          <span class="nav-label">Contact Us</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-bottom">
+      <a href="#">FAQ</a>
+      <a href="#">Settings</a>
+      <a href="#">Log out</a>
+    </div>
+  </nav>
+
+  <!-- ─── Page wrapper ─────────────────────────────────────────────── -->
+  <div class="portal-page">
+
+    <!-- ─── Top nav ───────────────────────────────────────────────── -->
+    <header class="top-nav">
+      <a class="top-nav-back" href="#">
+        <span class="material-icons-outlined back-icon">arrow_back</span>
+        Back
+      </a>
+      <div class="top-nav-actions">
+        <div class="notif-wrap">
+          <span class="material-icons-outlined notif-icon">notifications</span>
+          <span class="notif-badge">32</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── Main content ──────────────────────────────────────────── -->
+    <main class="main-content">
+
+      <!-- ─────────────────────────────────────────────────────────────
+           COMPONENT 1: PAGE HEADER
+           ─────────────────────────────────────────────────────────── -->
+      <div class="page-header">
+
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+          <a class="breadcrumb-link body-m-reg" href="#">Earnings overview</a>
+          <span class="breadcrumb-sep">/</span>
+        </nav>
+
+        <!-- Title row -->
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1 class="page-title">Outstanding debt of</h1>
+            <!-- Context selector — "viewing as" agent dropdown -->
+            <button class="context-selector">
+              Mike ross (self)
+              <span class="material-icons-outlined chevron">expand_more</span>
+            </button>
+          </div>
+          <!-- Primary CTA — only visible when outstanding debt > $0 -->
+          <button class="btn-primary-cta">Pay debt now</button>
+        </div>
+
+      </div>
+      <!-- END: PAGE HEADER -->
+
+
+      <!-- ─────────────────────────────────────────────────────────────
+           COMPONENT 2: SUMMARY CARD STRIP
+           Three segments: Total (selected) · Personal · Rolled-up from team
+           ─────────────────────────────────────────────────────────── -->
+      <div class="summary-card-strip">
+
+        <!-- Segment 1: Total — selected/active state -->
+        <div class="summary-segment active">
+          <span class="summary-value">($1,500)</span>
+          <span class="summary-label--active">Total outstanding debt</span>
+        </div>
+
+        <!-- Segment 2: Personal — inactive, clickable -->
+        <a class="summary-segment inactive" href="#">
+          <span class="summary-value">($600)</span>
+          <span class="summary-label--inactive">Personal</span>
+        </a>
+
+        <!-- Segment 3: Rolled-up from team — inactive, clickable -->
+        <a class="summary-segment inactive" href="#">
+          <span class="summary-value">($900)</span>
+          <span class="summary-label--inactive">Rolled-up from team</span>
+        </a>
+
+      </div>
+      <!-- END: SUMMARY CARD STRIP -->
+
+
+      <!-- ─────────────────────────────────────────────────────────────
+           COMPONENT 3: DATA TABLE CARD
+           ─────────────────────────────────────────────────────────── -->
+      <div class="data-table-card">
+
+        <!-- ── 3a. TABLE TOOLBAR ──────────────────────────────────── -->
+        <div class="table-toolbar">
+
+          <!-- Left: search + filter -->
+          <div class="toolbar-left">
+            <div class="table-search">
+              <span class="material-icons-outlined search-icon">search</span>
+              <input type="text" placeholder="Search by policy number" />
+            </div>
+            <button class="btn-filter">
+              Debt source: All
+              <span class="material-icons-outlined chevron">expand_more</span>
+            </button>
+          </div>
+
+          <!-- Right: view switcher + export -->
+          <div class="toolbar-right">
+
+            <!-- ── VIEW SWITCHER ──────────────────────────────────── -->
+            <div class="view-switcher">
+              <button class="view-tab active">Agent view</button>
+              <button class="view-tab inactive">Policy view</button>
+            </div>
+
+            <button class="btn-secondary">Export</button>
+          </div>
+
+        </div>
+        <!-- END: TABLE TOOLBAR -->
+
+
+        <!-- ── 3b. TABLE META ROW ─────────────────────────────────── -->
+        <div class="table-meta">
+          <div class="table-meta-summary">
+            <span>7 agents contributing to total debt of</span>
+            <span class="meta-value">($1,500)</span>
+          </div>
+          <span class="table-meta-timestamp">data last updated on 03/03/25</span>
+        </div>
+        <!-- END: TABLE META -->
+
+
+        <!-- ── 3c. COLUMN HEADERS ─────────────────────────────────── -->
+        <div class="table-header-row">
+
+          <!-- Col 1: Contributing agents — dotted underline (tooltip) -->
+          <div class="col-header">
+            <div class="col-header-inner">
+              <span class="col-header-text dotted">Contributing agents</span>
+            </div>
+            <span class="material-icons-outlined col-overflow-icon">more_vert</span>
+          </div>
+
+          <!-- Col 2: Debt amount -->
+          <div class="col-header">
+            <div class="col-header-inner">
+              <span class="col-header-text">Debt amount</span>
+            </div>
+            <span class="material-icons-outlined col-overflow-icon">more_vert</span>
+          </div>
+
+          <!-- Col 3: Repayment history — dotted underline (tooltip) -->
+          <div class="col-header">
+            <div class="col-header-inner">
+              <span class="col-header-text dotted">Repayment history</span>
+            </div>
+            <span class="material-icons-outlined col-overflow-icon">more_vert</span>
+          </div>
+
+          <!-- Col 4: Policies — sorted descending -->
+          <div class="col-header">
+            <div class="col-header-inner">
+              <span class="material-icons-outlined col-sort-icon">arrow_downward</span>
+              <span class="col-header-text">Policies</span>
+            </div>
+          </div>
+
+        </div>
+        <!-- END: COLUMN HEADERS -->
+
+
+        <!-- ── 3d. TABLE ROWS ─────────────────────────────────────── -->
+        <div class="table-body">
+
+          <!-- Row 1: Active agent — Mike ross (self) -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text">Mike ross (Personal)</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($600)</span>
+            </div>
+            <div class="table-cell">
+              <!-- BADGE: neutral default — repayment % -->
+              <span class="badge">90%</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 2: Active agent — Liam Parker -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text">Liam Parker</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($300)</span>
+            </div>
+            <div class="table-cell">
+              <span class="badge">80%</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 3: Active agent — Ava Johnson -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text">Ava Johnson</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($100)</span>
+            </div>
+            <div class="table-cell">
+              <span class="badge">85%</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 4: Active agent — Ethan Davis -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text">Ethan Davis</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($300)</span>
+            </div>
+            <div class="table-cell">
+              <span class="badge">92%</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 5: Terminated agent — Noah Williams (muted + terminated icon) -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text muted">Noah Williams</span>
+                <!-- Status icon: terminated -->
+                <span class="material-icons-outlined status-icon" title="Terminated">block</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($100)</span>
+            </div>
+            <div class="table-cell">
+              <span class="badge">76%</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 6: Active agent — Emma Thompson (N/A repayment) -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text">Emma Thompson</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($100)</span>
+            </div>
+            <div class="table-cell">
+              <!-- BADGE: N/A — no repayment history -->
+              <span class="badge">N/A</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Row 7: Transferred agent — Sophia Miller (muted + transfer icon) -->
+          <div class="table-row">
+            <div class="table-cell">
+              <div class="cell-content">
+                <span class="cell-text muted">Sophia Miller</span>
+                <!-- Status icon: transferred out -->
+                <span class="material-icons-outlined status-icon" title="Transferred out">swap_horiz</span>
+              </div>
+            </div>
+            <div class="table-cell">
+              <span class="cell-text amount-red">($100)</span>
+            </div>
+            <div class="table-cell">
+              <span class="badge">87%</span>
+            </div>
+            <div class="table-cell">
+              <button class="btn-row-action">
+                View policies
+                <span class="material-icons-outlined action-icon">open_in_new</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+        <!-- END: TABLE ROWS -->
+
+
+        <!-- ── 3e. TABLE PAGINATION ───────────────────────────────── -->
+        <div class="table-pagination">
+
+          <!-- Rows per page -->
+          <div class="pagination-rows">
+            <span class="pagination-label">Rows per page</span>
+            <div class="pagination-rows-select">
+              10
+              <span class="material-icons-outlined chevron">expand_more</span>
+            </div>
+          </div>
+
+          <!-- Page navigation -->
+          <div class="pagination-nav">
+            <span class="pagination-showing">Showing 1-7 of 7</span>
+            <button class="pagination-btn" disabled>
+              <span class="material-icons-outlined">chevron_left</span>
+            </button>
+            <button class="pagination-btn" disabled>
+              <span class="material-icons-outlined">chevron_right</span>
+            </button>
+          </div>
+
+        </div>
+        <!-- END: PAGINATION -->
+
+      </div>
+      <!-- END: DATA TABLE CARD -->
+
+    </main>
+  </div>
+  <!-- END: Portal page -->
+
+</body>
+</html>

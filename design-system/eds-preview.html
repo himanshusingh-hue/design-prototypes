@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDS Components — Flat CSS Preview</title>
+  <link rel="stylesheet" href="./ds.css">
+  <style>
+    body { background: var(--theme-bg-subtle); font-family: NewTheinhardt, sans-serif; padding: var(--sizing-lg); }
+    h1 { font-size: var(--font-size-7); font-weight: 700; color: var(--neutrals-night-100); margin-bottom: var(--spacing-sm); }
+    .meta { font-size: var(--font-size-sm); color: var(--neutrals-night-60); margin-bottom: var(--sizing-lg); }
+    h2 { font-size: var(--font-size-4); font-weight: 600; color: var(--neutrals-night-100); margin: var(--sizing-lg) 0 var(--spacing-lg); border-bottom: 1px solid var(--neutrals-night-10); padding-bottom: var(--spacing-sm); }
+    h3 { font-size: var(--font-size-sm); font-weight: 600; color: var(--neutrals-night-60); text-transform: uppercase; letter-spacing: 0.05em; margin: var(--spacing-2xl) 0 var(--spacing-md); }
+    .row { display: flex; flex-wrap: wrap; gap: var(--spacing-md); align-items: center; margin-bottom: var(--spacing-sm); }
+    .col { display: flex; flex-direction: column; gap: var(--spacing-lg); max-width: 400px; }
+    .demo-label { font-size: var(--font-size-xs); color: var(--neutrals-night-40); font-family: monospace; margin-bottom: var(--spacing-xs); }
+    section { background: white; border-radius: var(--radii-2); padding: var(--spacing-3xl); margin-bottom: var(--spacing-2xl); border: 1px solid var(--neutrals-night-10); }
+    .dark-bg { background: var(--neutrals-night-100); padding: var(--spacing-2xl); border-radius: var(--radii-2); display: inline-flex; gap: var(--spacing-md); }
+  </style>
+</head>
+<body>
+
+<h1>EDS Components — Flat CSS Preview</h1>
+<p class="meta">eds-components.css · Last verified 2026-04-02 · All values derived from design-system.md spec</p>
+
+<!-- ═══════════════════ BUTTONS ═══════════════════ -->
+<section>
+  <h2>1. Button</h2>
+
+  <h3>Variants (md size)</h3>
+  <div class="row">
+    <div>
+      <div class="demo-label">.eds-btn-primary</div>
+      <button class="eds-btn eds-btn-primary">Save changes</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-primary-inverted</div>
+      <button class="eds-btn eds-btn-primary-inverted">Save changes</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-secondary</div>
+      <button class="eds-btn eds-btn-secondary">Save changes</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-gray-outline</div>
+      <button class="eds-btn eds-btn-gray-outline">Cancel</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-black-solid</div>
+      <button class="eds-btn eds-btn-black-solid">Continue</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-salamander</div>
+      <button class="eds-btn eds-btn-salamander">Warning action</button>
+    </div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <div>
+      <div class="demo-label">.eds-btn-info-solid</div>
+      <button class="eds-btn eds-btn-info-solid">Info action</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-info-outline</div>
+      <button class="eds-btn eds-btn-info-outline">Info action</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-warning-solid</div>
+      <button class="eds-btn eds-btn-warning-solid">Review</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-warning-outline</div>
+      <button class="eds-btn eds-btn-warning-outline">Review</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-error-solid</div>
+      <button class="eds-btn eds-btn-error-solid">Delete</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-error-outline</div>
+      <button class="eds-btn eds-btn-error-outline">Delete</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn-link</div>
+      <button class="eds-btn eds-btn-link">View details</button>
+    </div>
+  </div>
+
+  <h3>Sizes (.eds-btn-primary)</h3>
+  <div class="row">
+    <div>
+      <div class="demo-label">.eds-btn--xs (28px)</div>
+      <button class="eds-btn eds-btn-primary eds-btn--xs">Save</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn--sm (36px)</div>
+      <button class="eds-btn eds-btn-primary eds-btn--sm">Save</button>
+    </div>
+    <div>
+      <div class="demo-label">default (48px)</div>
+      <button class="eds-btn eds-btn-primary">Save</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn--lg (64px)</div>
+      <button class="eds-btn eds-btn-primary eds-btn--lg">Save</button>
+    </div>
+    <div>
+      <div class="demo-label">.eds-btn--xl (80px)</div>
+      <button class="eds-btn eds-btn-primary eds-btn--xl">Save</button>
+    </div>
+  </div>
+
+  <h3>States</h3>
+  <div class="row">
+    <div>
+      <div class="demo-label">disabled</div>
+      <button class="eds-btn eds-btn-primary" disabled>Disabled</button>
+    </div>
+    <div>
+      <div class="demo-label">with icon</div>
+      <button class="eds-btn eds-btn-secondary">
+        <span class="material-icons-outlined" style="font-size:18px">add</span>
+        Add policy
+      </button>
+    </div>
+    <div>
+      <div class="demo-label">loading</div>
+      <button class="eds-btn eds-btn-primary">
+        <div class="eds-spinner eds-spinner--sm eds-spinner--inverted" role="status"></div>
+        Saving...
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ BADGES ═══════════════════ -->
+<section>
+  <h2>2. Badge</h2>
+
+  <h3>Solid variants (md)</h3>
+  <div class="row">
+    <span class="eds-badge eds-badge-primary-solid">Primary</span>
+    <span class="eds-badge eds-badge-black-solid">Black</span>
+    <span class="eds-badge eds-badge-gray-solid">Gray</span>
+    <span class="eds-badge eds-badge-info-solid">Info</span>
+    <span class="eds-badge eds-badge-warning-solid">Warning</span>
+    <span class="eds-badge eds-badge-error-solid">Error</span>
+  </div>
+
+  <h3>Light variants (md)</h3>
+  <div class="row">
+    <span class="eds-badge eds-badge-success-light">Success</span>
+    <span class="eds-badge eds-badge-info-light">Info</span>
+    <span class="eds-badge eds-badge-error-light">Error</span>
+  </div>
+
+  <h3>Outline variants (md)</h3>
+  <div class="row">
+    <span class="eds-badge eds-badge-success-outline">Success</span>
+    <span class="eds-badge eds-badge-black-outline">Black</span>
+    <span class="eds-badge eds-badge-gray-outline">Gray</span>
+    <span class="eds-badge eds-badge-info-outline">Info</span>
+    <span class="eds-badge eds-badge-warning-outline">Warning</span>
+    <span class="eds-badge eds-badge-error-outline">Error</span>
+  </div>
+
+  <h3>Sizes (.eds-badge-info-solid)</h3>
+  <div class="row" style="align-items:flex-end">
+    <div>
+      <div class="demo-label">--sm (20px)</div>
+      <span class="eds-badge eds-badge-info-solid eds-badge--sm">New</span>
+    </div>
+    <div>
+      <div class="demo-label">default (24px)</div>
+      <span class="eds-badge eds-badge-info-solid">New</span>
+    </div>
+    <div>
+      <div class="demo-label">--lg (28px)</div>
+      <span class="eds-badge eds-badge-info-solid eds-badge--lg">New</span>
+    </div>
+  </div>
+
+  <h3>With icon</h3>
+  <div class="row">
+    <span class="eds-badge eds-badge-success-light">
+      <span class="material-icons-outlined" style="font-size:12px">check_circle</span>
+      Approved
+    </span>
+    <span class="eds-badge eds-badge-error-solid">
+      <span class="material-icons-outlined" style="font-size:12px">error</span>
+      Failed
+    </span>
+  </div>
+</section>
+
+<!-- ═══════════════════ ALERT ═══════════════════ -->
+<section>
+  <h2>3. Alert</h2>
+  <div class="col" style="max-width:560px">
+    <div class="eds-alert">
+      <span class="material-icons-outlined eds-alert__icon">info</span>
+      <div>
+        <div class="eds-alert__title">Default alert</div>
+        <div class="eds-alert__desc">Some contextual information is shown here.</div>
+      </div>
+    </div>
+    <div class="eds-alert eds-alert--success">
+      <span class="material-icons-outlined eds-alert__icon">check_circle</span>
+      <div>
+        <div class="eds-alert__title">Policy approved</div>
+        <div class="eds-alert__desc">The policy is now active and coverage has begun.</div>
+      </div>
+    </div>
+    <div class="eds-alert eds-alert--info">
+      <span class="material-icons-outlined eds-alert__icon">info</span>
+      <div>
+        <div class="eds-alert__title">Application submitted</div>
+        <div class="eds-alert__desc">Review typically takes 2–3 business days.</div>
+      </div>
+    </div>
+    <div class="eds-alert eds-alert--warning">
+      <span class="material-icons-outlined eds-alert__icon">warning</span>
+      <div>
+        <div class="eds-alert__title">Incomplete information</div>
+        <div class="eds-alert__desc">Please complete the required fields before proceeding.</div>
+      </div>
+    </div>
+    <div class="eds-alert eds-alert--error">
+      <span class="material-icons-outlined eds-alert__icon">error</span>
+      <div>
+        <div class="eds-alert__title">Payment failed</div>
+        <div class="eds-alert__desc">We couldn't process the payment. Please check card details.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ MESSAGE BAR ═══════════════════ -->
+<section>
+  <h2>4. MessageBar</h2>
+  <div class="col" style="max-width:560px">
+    <div class="eds-message-bar eds-message-bar--primary">
+      <span class="material-icons-outlined eds-message-bar__icon">notifications</span>
+      <div>
+        <div class="eds-message-bar__text">Your session will expire in 5 minutes.</div>
+        <div class="eds-message-bar__subtext">Save your work to avoid losing changes.</div>
+      </div>
+    </div>
+    <div class="eds-message-bar eds-message-bar--info">
+      <span class="material-icons-outlined eds-message-bar__icon">info</span>
+      <div class="eds-message-bar__text">New policy types are now available.</div>
+    </div>
+    <div class="eds-message-bar eds-message-bar--success">
+      <span class="material-icons-outlined eds-message-bar__icon">check_circle</span>
+      <div class="eds-message-bar__text">Changes saved successfully.</div>
+      <button class="eds-message-bar__close"><span class="material-icons-outlined" style="font-size:18px">close</span></button>
+    </div>
+    <div class="eds-message-bar eds-message-bar--warning">
+      <span class="material-icons-outlined eds-message-bar__icon">warning</span>
+      <div class="eds-message-bar__text">Rate class affects premium calculations.</div>
+    </div>
+    <div class="eds-message-bar eds-message-bar--error">
+      <span class="material-icons-outlined eds-message-bar__icon">error</span>
+      <div class="eds-message-bar__text">Unable to load agent data. Try again.</div>
+    </div>
+    <div class="eds-message-bar eds-message-bar--gray">
+      <span class="material-icons-outlined eds-message-bar__icon">history</span>
+      <div class="eds-message-bar__text">Data last updated 2 hours ago.</div>
+    </div>
+    <div class="eds-message-bar eds-message-bar--white">
+      <span class="material-icons-outlined eds-message-bar__icon">help_outline</span>
+      <div class="eds-message-bar__text">Need help? Contact support.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ BANNER ═══════════════════ -->
+<section>
+  <h2>4b. Banner</h2>
+  <div class="eds-banner">
+    <div class="eds-banner__heading">System maintenance scheduled</div>
+    <div class="eds-banner__text">The portal will be unavailable on Sunday 6–8 AM ET. Please plan accordingly.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════ TEXT INPUT ═══════════════════ -->
+<section>
+  <h2>5. TextInput</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:700px">
+    <div class="eds-field">
+      <label class="eds-label">First name</label>
+      <div class="eds-input-wrap">
+        <input class="eds-input" placeholder="Enter first name">
+      </div>
+      <span class="eds-hint">As it appears on government ID</span>
+    </div>
+    <div class="eds-field eds-field--error">
+      <label class="eds-label">Email</label>
+      <div class="eds-input-wrap">
+        <input class="eds-input" value="invalid@">
+        <span class="material-icons-outlined eds-input-icon--trail" style="color:var(--utility-error-carmine-red-100)">error</span>
+      </div>
+      <span class="eds-hint eds-hint--error">Enter a valid email address</span>
+    </div>
+    <div class="eds-field">
+      <label class="eds-label">Search</label>
+      <div class="eds-input-wrap">
+        <span class="material-icons-outlined eds-input-icon--lead">search</span>
+        <input class="eds-input" placeholder="Search agents...">
+      </div>
+    </div>
+    <div class="eds-field">
+      <label class="eds-label">Disabled field</label>
+      <div class="eds-input-wrap">
+        <input class="eds-input" value="Read only" disabled>
+      </div>
+    </div>
+  </div>
+  <h3>Sizes</h3>
+  <div style="display:flex;flex-direction:column;gap:12px;max-width:320px">
+    <div>
+      <div class="demo-label">--sm (48px)</div>
+      <input class="eds-input eds-input--sm" placeholder="Small input">
+    </div>
+    <div>
+      <div class="demo-label">default (56px)</div>
+      <input class="eds-input" placeholder="Medium input">
+    </div>
+    <div>
+      <div class="demo-label">--lg (80px)</div>
+      <input class="eds-input eds-input--lg" placeholder="Large input">
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ SPINNER ═══════════════════ -->
+<section>
+  <h2>6. Spinner</h2>
+  <h3>Sizes</h3>
+  <div class="row" style="align-items:center">
+    <div style="text-align:center">
+      <div class="demo-label">xs 16px</div>
+      <div class="eds-spinner eds-spinner--xs"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="demo-label">sm 20px (default)</div>
+      <div class="eds-spinner"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="demo-label">md 24px</div>
+      <div class="eds-spinner eds-spinner--md"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="demo-label">lg 30px</div>
+      <div class="eds-spinner eds-spinner--lg"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="demo-label">xl 40px</div>
+      <div class="eds-spinner eds-spinner--xl"></div>
+    </div>
+    <div style="text-align:center">
+      <div class="demo-label">2xl 64px</div>
+      <div class="eds-spinner eds-spinner--2xl"></div>
+    </div>
+  </div>
+  <h3>Color variants</h3>
+  <div class="row">
+    <div>
+      <div class="demo-label">default (cypress)</div>
+      <div class="eds-spinner eds-spinner--lg"></div>
+    </div>
+    <div style="background:#272727;padding:12px;border-radius:8px">
+      <div class="demo-label" style="color:white">--inverted (white)</div>
+      <div class="eds-spinner eds-spinner--lg eds-spinner--inverted"></div>
+    </div>
+    <div>
+      <div class="demo-label">--black</div>
+      <div class="eds-spinner eds-spinner--lg eds-spinner--black"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PHASE 2 ═══════════════════ -->
+<section>
+  <h2>7–8. TextArea + Dropdown</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:700px">
+    <div class="eds-field">
+      <label class="eds-label">Notes</label>
+      <textarea class="eds-textarea" placeholder="Add a note about this policy..."></textarea>
+    </div>
+    <div class="eds-field">
+      <label class="eds-label">State of residence</label>
+      <div class="eds-dropdown-wrap">
+        <select class="eds-dropdown">
+          <option value="">Select state</option>
+          <option>California</option>
+          <option>Texas</option>
+          <option>New York</option>
+        </select>
+        <span class="material-icons-outlined eds-dropdown-chevron">expand_more</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>9–11. Checkbox, Radio, Toggle</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px;max-width:700px">
+    <div>
+      <h3>Checkbox</h3>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <label class="eds-checkbox-wrap">
+          <span class="eds-checkbox"></span>
+          <span class="eds-checkbox-label">Unchecked</span>
+        </label>
+        <label class="eds-checkbox-wrap">
+          <span class="eds-checkbox eds-checkbox--checked"></span>
+          <span class="eds-checkbox-label">Checked</span>
+        </label>
+      </div>
+    </div>
+    <div>
+      <h3>Radio</h3>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <label class="eds-radio-wrap">
+          <span class="eds-radio"></span>
+          <span class="eds-radio-label">Option A</span>
+        </label>
+        <label class="eds-radio-wrap">
+          <span class="eds-radio eds-radio--checked"></span>
+          <span class="eds-radio-label">Option B (selected)</span>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <label class="eds-square-radio">A</label>
+        <label class="eds-square-radio eds-square-radio--checked">B</label>
+        <label class="eds-square-radio">C</label>
+      </div>
+    </div>
+    <div>
+      <h3>Toggle</h3>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="eds-toggle"><span class="eds-toggle__handle"></span></div>
+          <span style="font-size:14px;color:#525252">Off</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="eds-toggle eds-toggle--on"><span class="eds-toggle__handle"></span></div>
+          <span style="font-size:14px;color:#525252">On</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="eds-toggle eds-toggle--disabled"><span class="eds-toggle__handle"></span></div>
+          <span style="font-size:14px;color:#a9a9a9">Disabled</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <h3>Content Checkbox</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:500px">
+    <label class="eds-content-checkbox">
+      <div class="eds-content-checkbox__check"></div>
+      <div>
+        <div style="font-weight:500;font-size:14px">Monthly premium</div>
+        <div style="font-size:12px;color:#7e7e7e">Pay each month</div>
+      </div>
+    </label>
+    <label class="eds-content-checkbox eds-content-checkbox--checked">
+      <div class="eds-content-checkbox__check"></div>
+      <div>
+        <div style="font-weight:500;font-size:14px">Annual premium</div>
+        <div style="font-size:12px;color:#7e7e7e">Save up to 10%</div>
+      </div>
+    </label>
+  </div>
+</section>
+
+<section>
+  <h2>12. Modal</h2>
+  <div style="position:relative;height:280px;background:#f4f4f4;border-radius:8px;overflow:hidden">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center">
+      <div class="eds-modal" style="position:relative;max-height:none">
+        <div class="eds-modal__header">
+          <span class="eds-modal__title">Confirm termination</span>
+          <button class="eds-modal__close"><span class="material-icons-outlined" style="font-size:20px">close</span></button>
+        </div>
+        <div class="eds-modal__body">
+          Are you sure you want to terminate this policy? This action cannot be undone.
+        </div>
+        <div class="eds-modal__footer">
+          <button class="eds-btn eds-btn-gray-outline eds-btn--sm">Cancel</button>
+          <button class="eds-btn eds-btn-error-solid eds-btn--sm">Terminate policy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>14. Accordion</h2>
+  <div style="max-width:480px;display:flex;flex-direction:column;gap:8px">
+    <div class="eds-accordion eds-accordion--open">
+      <button class="eds-accordion__trigger">
+        Personal information
+        <span class="material-icons-outlined eds-accordion__chevron">expand_more</span>
+      </button>
+      <div class="eds-accordion__content">
+        Name, date of birth, and contact details will appear here.
+      </div>
+    </div>
+    <div class="eds-accordion">
+      <button class="eds-accordion__trigger">
+        Coverage details
+        <span class="material-icons-outlined eds-accordion__chevron">expand_more</span>
+      </button>
+      <div class="eds-accordion__content">Hidden content</div>
+    </div>
+    <div class="eds-accordion">
+      <button class="eds-accordion__trigger">
+        Beneficiaries
+        <span class="material-icons-outlined eds-accordion__chevron">expand_more</span>
+      </button>
+      <div class="eds-accordion__content">Hidden content</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>15–16. ProgressBar + ProgressSteps</h2>
+  <div style="max-width:480px">
+    <h3>Progress Bar</h3>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div class="demo-label" style="margin-bottom:6px">25%</div>
+        <div class="eds-progress-bar"><div class="eds-progress-bar__fill" style="width:25%"></div></div>
+      </div>
+      <div>
+        <div class="demo-label" style="margin-bottom:6px">65%</div>
+        <div class="eds-progress-bar"><div class="eds-progress-bar__fill" style="width:65%"></div></div>
+      </div>
+      <div>
+        <div class="demo-label" style="margin-bottom:6px">100%</div>
+        <div class="eds-progress-bar"><div class="eds-progress-bar__fill" style="width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+  <h3 style="margin-top:32px">Progress Steps (vertical)</h3>
+  <div class="eds-progress-steps" style="max-width:300px">
+    <div class="eds-step eds-step--complete">
+      <div class="eds-step__indicator">
+        <span class="material-icons-outlined" style="font-size:20px">check</span>
+      </div>
+      <div class="eds-step__connector"></div>
+      <div class="eds-step__body">
+        <div class="eds-step__label">Personal info</div>
+        <div class="eds-step__support">Completed</div>
+      </div>
+    </div>
+    <div class="eds-step eds-step--current">
+      <div class="eds-step__indicator">2</div>
+      <div class="eds-step__connector"></div>
+      <div class="eds-step__body">
+        <div class="eds-step__label">Coverage selection</div>
+        <div class="eds-step__support">In progress</div>
+      </div>
+    </div>
+    <div class="eds-step eds-step--next">
+      <div class="eds-step__indicator">3</div>
+      <div class="eds-step__body">
+        <div class="eds-step__label">Review & submit</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>17. File Upload</h2>
+  <div style="max-width:420px;display:flex;flex-direction:column;gap:16px">
+    <div>
+      <div class="demo-label">Default</div>
+      <div class="eds-file-upload">
+        <span class="material-icons-outlined" style="font-size:32px;color:var(--neutrals-night-40)">upload_file</span>
+        <div class="eds-file-upload__text"><strong>Click to upload</strong> or drag and drop</div>
+        <div class="eds-file-upload__hint">JPG, PNG or PDF — max 10MB</div>
+      </div>
+    </div>
+    <div>
+      <div class="demo-label">Error state</div>
+      <div class="eds-file-upload eds-file-upload--error">
+        <span class="material-icons-outlined" style="font-size:32px;color:var(--utility-error-carmine-red-100)">error</span>
+        <div class="eds-file-upload__text" style="color:var(--utility-error-carmine-red-100)">File too large — max 10MB</div>
+        <div class="eds-file-upload__hint">Try a smaller file</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
