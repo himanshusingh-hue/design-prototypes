@@ -6,9 +6,9 @@
   <title>Portal Access Tiers — Design Preview</title>
 
   <!-- 1. DS tokens + fonts + all .eds-* classes -->
-  <link rel="stylesheet" href="./design-system/ds.css">
+  <link rel="stylesheet" href="../../../design-system/ds.css">
   <!-- 2. Portal shell patterns (sidebar, navbar, tables, badges, etc.) -->
-  <link rel="stylesheet" href="./design-system/shared-components.css">
+  <link rel="stylesheet" href="../../../design-system/shared-components.css">
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 
@@ -277,45 +277,6 @@
       line-height: 20px;
     }
 
-    /*
-     * NET-NEW: .restored-banner — success override on eds-banner
-     * Not in patterns.md because: eds-banner is always cypress (green) and
-     * non-dismissible. Restoration feedback is one-time, dismissible, and
-     * uses a softer success green distinct from the standard cypress banner.
-     */
-    #preview-canvas .restored-banner {
-      background: #f0faf4;
-      border-bottom: 2px solid var(--primary-cypress-50);
-      border-radius: 0;
-      padding: var(--spacing-md) var(--spacing-3xl);
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md);
-      width: 100%;
-      flex-shrink: 0;
-    }
-
-    #preview-canvas .restored-banner .banner-icon {
-      font-size: 20px;
-      color: var(--primary-cypress-100);
-      flex-shrink: 0;
-    }
-
-    #preview-canvas .restored-banner .banner-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--neutrals-night-60);
-      display: flex;
-      align-items: center;
-      padding: var(--spacing-xs);
-      border-radius: var(--radii-1);
-    }
-
-    #preview-canvas .restored-banner .banner-close:hover {
-      background: rgba(0,0,0,0.05);
-    }
-
     /* Home page grid for accessible features */
     #preview-canvas .home-section-title {
       font-family: NewTheinhardt, sans-serif;
@@ -400,8 +361,7 @@
       grid-template-columns: 1fr 1fr;
     }
 
-    #preview-canvas.mobile .restricted-banner,
-    #preview-canvas.mobile .restored-banner {
+    #preview-canvas.mobile .restricted-banner {
       padding: var(--spacing-md) var(--spacing-lg);
     }
 
@@ -1819,7 +1779,7 @@
       <span class="screen-id">S1</span>Restricted Status Banner
     </div>
     <div class="screen-item" data-screen="S2" onclick="navigate('S2')">
-      <span class="screen-id">S2</span>Blocked Quote &amp; App
+      <span class="screen-id">S2</span>Quote &amp; App (Application Blocked)
     </div>
     <div class="screen-item" data-screen="S3" onclick="navigate('S3')">
       <span class="screen-id">S3</span>Blocked Share Website
@@ -1863,9 +1823,7 @@
     <div class="screen-item" data-screen="O2" onclick="navigate('O2')">
       <span class="screen-id">O2</span>Reverse to Active Drawer
     </div>
-    <div class="screen-item" data-screen="O3" onclick="navigate('O3')">
-      <span class="screen-id">O3</span>Status History Timeline
-    </div>
+
     <div class="screen-item" data-screen="O4a" onclick="navigate('O4a')">
       <span class="screen-id">O4a</span>Currently Restricted Tab
     </div>
@@ -1928,8 +1886,8 @@
 
     // ── Screen metadata (states per screen) ───────────────────────────
     const SCREEN_META = {
-      S1:  { title: 'Restricted Status Banner',     states: ['default', 'restored'] },
-      S2:  { title: 'Blocked Quote & Application',  states: ['default'] },
+      S1:  { title: 'Restricted Status Banner',     states: ['default'] },
+      S2:  { title: 'Quote & Application — Quote Accessible, Application Blocked',  states: ['default'] },
       S3:  { title: 'Blocked Share Website',        states: ['default'] },
       S4:  { title: 'Settings — Delegate Access',   states: ['empty', 'active', 'at-cap'] },
       S5:  { title: 'Delegate Invite Form',         states: ['default', 'existing-agent', 'duplicate-error'] },
@@ -1942,7 +1900,6 @@
       DOB: { title: 'Delegate Onboarding',          states: ['email-login', 'two-fa', 'home'] },
       O1:  { title: 'Set Restricted — Drawer',      states: ['default', 'pending', 'success', 'error'] },
       O2:  { title: 'Reverse to Active — Drawer',   states: ['default', 'pending', 'success'] },
-      O3:  { title: 'Status History Timeline',      states: ['default', 'backfill'] },
       O4a: { title: 'Currently Restricted Tab',     states: ['default', 'empty'] },
       O4b: { title: 'Re-evaluation Queue',          states: ['default', 'row-pending'] },
       P2:  { title: 'Phase 2 — Onboarding',          states: ['default'] },
@@ -1954,10 +1911,11 @@
     function _portalShell(activeNav, mainContent, showBanner) {
       const NAV = [
         { id:'home',      icon:'home',          label:'Home'                         },
-        { id:'quote',     icon:'request_quote', label:'Quote &amp; Application', nav:'S2', blocked:true },
+        { id:'quote',     icon:'request_quote', label:'Quote &amp; Application', nav:'S2' },
         { id:'customers', icon:'group',         label:'Customers'                    },
         { id:'earnings',  icon:'payments',      label:'Earnings'                     },
         { id:'perf',      icon:'bar_chart',     label:'Performance'                  },
+        { id:'rewards',   icon:'emoji_events',  label:'Rewards',                                   blocked:true },
         { id:'resources', icon:'menu_book',     label:'Resources'                    },
         { id:'refer',     icon:'people',        label:'Refer Agents'                 },
         { id:'share',     icon:'share',         label:'Share Website',          nav:'S3', blocked:true },
@@ -1978,7 +1936,7 @@
         '<span class="material-icons-outlined banner-icon">warning_amber</span>' +
         '<div class="banner-body">' +
         '<div class="eds-banner-heading">Your account is in Restricted status</div>' +
-        '<div class="eds-banner-text">You can view earnings and service existing policies, but you cannot write new business.</div>' +
+        '<div class="eds-banner-text">You can view earnings (override commissions continue) and service existing policies, and you can create quotes but cannot create or submit new applications or receive personal commission.</div>' +
         '</div>' +
         '<a href="#" class="eds-btn eds-btn-gray-outline eds-btn--sm" style="flex-shrink:0">Contact Support</a>' +
         '</div>';
@@ -2027,7 +1985,7 @@
       '<div class="bm-metric"><div class="bm-metric-label">Persistency (13 mo) <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A &nbsp;·&nbsp; Suggested &gt;70%</div></div>' +
       '<div class="bm-metric"><div class="bm-metric-label">Activation rate <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A &nbsp;·&nbsp; Suggested &gt;65%</div></div>' +
       '</div></div>' +
-      // Start a quote — blocked in Restricted
+      // Start a quote — accessible in Restricted (application creation/submission blocked)
       '<div class="quote-section-title">Start a quote</div>' +
       '<div class="product-btns">' +
       '<div class="product-btn">FE Whole Life <span class="material-icons-outlined">chevron_right</span></div>' +
@@ -2037,8 +1995,8 @@
       '</div>' +
       // Restricted notices replacing chargebacks/tasks
       '<div style="display:flex;flex-direction:column;gap:var(--spacing-sm);margin-bottom:var(--spacing-2xl)">' +
-      '<div class="restricted-notice"><span class="material-icons-outlined">block</span><span class="notice-text"><strong>Quote &amp; Application</strong> — writing new policies is disabled while your account is Restricted. <a href="#" data-navigate="S2" style="color:var(--primary-cypress-150)">See details</a></span></div>' +
-      '<div class="restricted-notice"><span class="material-icons-outlined">block</span><span class="notice-text"><strong>Share Website</strong> — your agent microsite is inactive. Clients are redirected to Ethos. <a href="#" data-navigate="S3" style="color:var(--primary-cypress-150)">See details</a></span></div>' +
+      '<div class="restricted-notice"><span class="material-icons-outlined">block</span><span class="notice-text"><strong>Application creation &amp; submission</strong> — you can still create quotes, but creating and submitting new applications is disabled while your account is Restricted. <a href="#" data-navigate="S2" style="color:var(--primary-cypress-150)">See details</a></span></div>' +
+      '<div class="restricted-notice"><span class="material-icons-outlined">block</span><span class="notice-text"><strong>Share Website</strong> — your agent microsite is inactive. Clients visiting your share link are redirected to Ethos D2C. <a href="#" data-navigate="S3" style="color:var(--primary-cypress-150)">See details</a></span></div>' +
       '</div>' +
       '</div>';
 
@@ -2113,7 +2071,7 @@
         { id:'home',         icon:'home',          label:'Home' },
         { id:'earnings',     icon:'payments',      label:'Earnings' },
         { id:'customers',    icon:'group',         label:'Customers' },
-        { id:'new-policies', icon:'request_quote', label:'New Policies' },
+        { id:'performance',  icon:'bar_chart',     label:'Performance' },
       ];
 
       const navHTML = ALL_NAV
@@ -2162,7 +2120,7 @@
       const cards = [
         { icon:'payments',      label:'Earnings',     sub:'View compensation, overrides, and production data',    disabled: false },
         { icon:'group',         label:'Customers',    sub:'View client list and existing policy details',          disabled: false },
-        { icon:'request_quote', label:'New Policies', sub:'Quote and apply for new life insurance policies',       disabled: !!someDisabled },
+        { icon:'bar_chart',     label:'Performance',  sub:'View team and organisation production metrics',         disabled: !!someDisabled },
       ];
       return '<div style="width:100%">' +
         '<h1 style="font-family:Cambon,serif;font-size:28px;font-weight:400;color:var(--neutrals-night-100);margin:0 0 var(--spacing-xs) 0">Welcome, Jordan Lee</h1>' +
@@ -2309,7 +2267,7 @@
       var entries;
       if (options.backfill) {
         entries = [
-          { dot:'dot-restricted', event:'Set to Restricted (backfill)', meta:'April 22, 2026 &nbsp;·&nbsp; Sarah K.', reason:'Retroactive backfill request', backfillNote:'Prior status history unavailable — status set via retroactive backfill.' },
+          { dot:'dot-restricted', event:'Retroactive comp payment — Terminated from Restricted', meta:'April 22, 2026 &nbsp;·&nbsp; Sarah K.', reason:'Retroactive comp payment applied for transition to Terminated from Restricted', backfillNote:'Retroactive comp payment recorded for agent transitioning to Terminated status from Restricted.' },
         ];
       } else {
         entries = [
@@ -2564,54 +2522,30 @@
     // ── Screen render functions ────────────────────────────────────────
     const SCREENS = {
       S1: function(state) {
-        const isRestored = state === 'restored';
-        const bannerHTML = isRestored ?
-          '<div class="restored-banner eds-banner">' +
-          '<span class="material-icons-outlined banner-icon">check_circle</span>' +
-          '<div class="banner-body">' +
-          '<div class="eds-banner-heading">Your account has been restored to Active status</div>' +
-          '<div class="eds-banner-text">All features are available. Welcome back.</div>' +
-          '</div>' +
-          '<button class="banner-close" title="Dismiss"><span class="material-icons-outlined" style="font-size:18px">close</span></button>' +
-          '</div>' : undefined;
-
-        // Restored state: all features unlocked — full home with active product buttons
-        const activeHomeContent = isRestored ?
-          '<div style="width:100%">' +
-          '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:var(--spacing-2xl)">' +
-          '<h1 style="font-family:Cambon,serif;font-size:32px;font-weight:400;letter-spacing:-0.28px;line-height:44px;color:var(--neutrals-night-100);margin:0">Hello, John Smith</h1>' +
-          '<div style="display:flex;align-items:center;gap:var(--spacing-md);flex-shrink:0">' +
-          '<span style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);color:var(--neutrals-night-80)">My business website</span>' +
-          '<a href="#" data-navigate="S3" style="font-family:NewTheinhardt,sans-serif;font-size:var(--font-size-sm);font-weight:600;color:var(--primary-cypress-100);text-decoration:none">Share</a>' +
-          '</div></div>' +
-          '<div class="bm-card">' +
-          '<div class="bm-title">Business Metrics</div>' +
-          '<div class="bm-grid">' +
-          '<div class="bm-metric"><div class="bm-metric-label">Issued premium <span class="material-icons-outlined" style="font-size:14px">info</span></div><div class="bm-metric-value">$0</div><div class="bm-metric-sub" style="color:var(--primary-cypress-100)">↑ 0 vs last 30 days</div></div>' +
-          '<div class="bm-metric"><div class="bm-metric-label">Persistency (4 mo)</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;90%</div></div>' +
-          '<div class="bm-metric"><div class="bm-metric-label">Persistency (7 mo)</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;80%</div></div>' +
-          '<div class="bm-metric"><div class="bm-metric-label">Persistency (13 mo)</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;70%</div></div>' +
-          '<div class="bm-metric"><div class="bm-metric-label">Activation rate</div><div class="bm-bar"><div class="bm-bar-fill" style="width:0%"></div></div><div class="bm-metric-sub">N/A · Suggested &gt;65%</div></div>' +
-          '</div></div>' +
-          '<div class="quote-section-title">Start a quote</div>' +
-          '<div class="product-btns">' +
-          '<div class="product-btn available">FE Whole Life <span class="material-icons-outlined">chevron_right</span></div>' +
-          '<div class="product-btn available">Ethos Protection IUL <span class="material-icons-outlined">chevron_right</span></div>' +
-          '<div class="product-btn available">Term Life <span class="material-icons-outlined">chevron_right</span></div>' +
-          '<div class="product-btn available">View All Products <span class="material-icons-outlined">add_circle_outline</span></div>' +
-          '</div></div>' : null;
-
-        return _portalShell('home', activeHomeContent || _homeContent, bannerHTML);
+        return _portalShell('home', _homeContent);
       },
       S2: function(state) {
-        const alert =
-          '<div class="redirect-explanation">' +
-          '<span class="material-icons-outlined">block</span>' +
-          '<div class="redirect-body">' +
-          '<h3>Quote &amp; Application is not available</h3>' +
-          '<p>Your account is in Restricted status. You cannot write new policies or submit applications until your account is restored to Active. Contact support if you believe this is in error.</p>' +
-          '</div></div>';
-        return _portalShell('home', alert + _homeContent);
+        const body =
+          '<div class="page-header"><h1 class="page-title">Quote &amp; Application</h1></div>' +
+          '<div class="restricted-notice" style="margin-bottom:var(--spacing-lg)">' +
+          '<span class="material-icons-outlined">info</span>' +
+          '<span class="notice-text">Your account is in <strong>Restricted status</strong>. You can create quotes, but <strong>application creation and submission is disabled</strong>. Contact support if you believe this is in error.</span>' +
+          '</div>' +
+          '<h3 style="margin-bottom:var(--spacing-sm);font-size:var(--font-size-sm);color:var(--neutral-700)">Start a quote</h3>' +
+          '<div class="product-btns" style="margin-bottom:var(--spacing-xl)">' +
+          '<div class="product-btn">FE Whole Life <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn">Ethos Protection IUL <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn">Term Life <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn">View All Products <span class="material-icons-outlined">add_circle_outline</span></div>' +
+          '</div>' +
+          '<h3 style="margin-bottom:var(--spacing-sm);font-size:var(--font-size-sm);color:var(--neutral-700)">Create application</h3>' +
+          '<div class="product-btns" style="opacity:0.4;pointer-events:none;cursor:not-allowed;margin-bottom:var(--spacing-xs)">' +
+          '<div class="product-btn" style="cursor:not-allowed">FE Whole Life <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn" style="cursor:not-allowed">Ethos Protection IUL <span class="material-icons-outlined">chevron_right</span></div>' +
+          '<div class="product-btn" style="cursor:not-allowed">Term Life <span class="material-icons-outlined">chevron_right</span></div>' +
+          '</div>' +
+          '<p style="font-size:var(--font-size-xs);color:var(--neutral-500);margin-bottom:var(--spacing-2xl)">Application creation is disabled while your account is in Restricted status.</p>';
+        return _portalShell('quote', body);
       },
 
       S3: function(state) {
@@ -2620,7 +2554,7 @@
           '<span class="material-icons-outlined">block</span>' +
           '<div class="redirect-body">' +
           '<h3>Share Website is currently inactive</h3>' +
-          '<p>Your agent microsite has been deactivated while your account is in Restricted status. Clients visiting your share link are automatically redirected to an Ethos quote flow. Your link will be restored when your account returns to Active.</p>' +
+          '<p>Your agent microsite has been deactivated while your account is in Restricted status. Clients visiting your share link are automatically redirected to the Ethos direct-to-consumer (D2C) flow. No agent portal is involved and no commission is earned on policies completed through this flow. Your link will be restored when your account returns to Active.</p>' +
           '</div></div>';
         return _portalShell('home', alert + _homeContent);
       },
@@ -2728,6 +2662,11 @@
           '</label>' +
           '<label class="eds-checkbox-wrap">' +
           '<span class="eds-checkbox"></span>' +
+          '<div><div class="eds-checkbox-label">View Performance</div>' +
+          '<div style="font-size:var(--font-size-xs);color:var(--neutrals-night-60);margin-top:2px">Team and individual production analytics</div></div>' +
+          '</label>' +
+          '<label class="eds-checkbox-wrap">' +
+          '<span class="eds-checkbox"></span>' +
           '<div><div class="eds-checkbox-label">View Customers</div>' +
           '<div style="font-size:var(--font-size-xs);color:var(--neutrals-night-60);margin-top:2px">Customer list and existing policy details</div></div>' +
           '</label>' +
@@ -2831,10 +2770,10 @@
       D3: function(state) {
         const allTabs = state === 'all-tabs';
         const navItems = allTabs
-          ? ['home', 'earnings', 'customers', 'new-policies']
+          ? ['home', 'earnings', 'customers', 'performance']
           : ['home', 'earnings', 'customers'];
         const note = allTabs ? '' :
-          '<div class="nav-absent-note"><strong>Design note:</strong> "New Policies" tab is absent (not dimmed) because the Principal has not enabled this permission for this delegate. The tab does not appear at all — it is not grayed out.</div>';
+          '<div class="nav-absent-note"><strong>Design note:</strong> "Performance" tab is absent (not dimmed) because the Principal has not enabled this permission for this delegate. The tab does not appear at all — it is not grayed out.</div>';
         return _delegateShell('home', note + _delegateHomeContent(!allTabs), { navItems: navItems });
       },
 
@@ -2860,9 +2799,10 @@
           '<p>As a delegate, you\'ll be able to view the following:</p>' +
           '<ul>' +
           '<li><strong>Earnings</strong> — compensation, overrides, and production data</li>' +
+          '<li><strong>Performance</strong> — team and individual production analytics</li>' +
           '<li><strong>Customers</strong> — client list and existing policy details</li>' +
           '</ul>' +
-          '<p>To get started, accept the invite below. You\'ll be asked to agree to the Delegate Access Terms the first time you log in.</p>' +
+          '<p>To get started, click the link below. You\'ll enter your email, verify it with a 6-digit code (2FA), and then agree to the Delegate Access Terms the first time you log in.</p>' +
           '<div class="email-cta-wrap"><a href="#" class="email-cta-btn">Accept invite</a></div>' +
           '<p class="email-expiry-note">This invite link expires in 7 days. If you didn\'t expect this email, you can safely ignore it — your information will not be shared.</p>' +
           '</div>' +
@@ -2880,7 +2820,7 @@
             '<div class="onboarding-card">' +
             '<div class="onboarding-logo">ethos</div>' +
             '<h1 class="onboarding-heading">Welcome to Ethos Partnerships</h1>' +
-            '<p class="onboarding-sub">Enter your email address to sign in or create your delegate account.</p>' +
+            '<p class="onboarding-sub">Enter the email address your invite was sent to. We\'ll email you a 6-digit code to verify your identity (same as agent sign-in).</p>' +
             '<div class="onboarding-form">' +
             '<div class="form-field">' +
             '<label class="form-label">Email address</label>' +
@@ -2927,7 +2867,6 @@
 
       O1:  function(state) { return _opsDrawerScreen('set-restricted', state); },
       O2:  function(state) { return _opsDrawerScreen('reverse-active', state); },
-      O3:  function(state) { return _opsDrawerScreen('timeline', state); },
       O4a: function(state) { return _opsRestrictedPage('currently-restricted', state); },
       O4b: function(state) { return _opsRestrictedPage('re-evaluation', state); },
 
@@ -3308,7 +3247,11 @@
     });
 
     // ── Init ──────────────────────────────────────────────────────────
-    navigate('S1');
+    (function() {
+      const p = new URLSearchParams(window.location.search);
+      const s = p.get('screen'), st = p.get('state');
+      navigate(s && SCREEN_META[s] ? s : 'S1', st || undefined);
+    })();
   </script>
 
 </body>
